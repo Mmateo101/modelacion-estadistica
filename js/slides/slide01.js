@@ -86,7 +86,7 @@
         "Análisis estadístico de la desigualdad en el acceso a la lectura en la infancia y su impacto en los hábitos de lectura en la vida adulta");
       const rule = L.h("div", { style: { width: "220px", height: "3px", margin: "38px auto 30px", background: C.plum, opacity: 0.6, borderRadius: "2px" } }, wrap);
       const course = L.h("div", { style: { fontSize: "30px", fontWeight: 600, color: C.ink2 } }, wrap, "MA1001B. Modelación estadística para la toma de decisiones (Grupo 202)");
-      const team = L.h("div", { class: "h-title", style: { fontSize: "40px", marginTop: "26px", color: C.plum } }, wrap, "Equipo 7");
+      const team = L.h("div", { class: "h-title", style: { fontSize: "40px", marginTop: "26px", color: C.plum } }, wrap, "Integrantes");
       const names = [
         "Fernando Isaac Martínez García · A00837933",
         "Mateo Rodolfo Flores Torres · A01783438",

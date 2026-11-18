@@ -233,7 +233,7 @@
       const pq = L.h("div", { class: "abs h-title", style: { left: 0, width: "800px", top: "470px", textAlign: "center", fontSize: "78px", color: C.ink } }, plate, "¿Preguntas?");
       const orn = L.s("svg", { width: 420, height: 30, viewBox: "0 0 420 30", style: "position:absolute;left:190px;top:600px" }, plate);
       const ornP = L.s("path", { d: "M10,15 C90,15 120,2 180,12 S200,26 210,15 S230,2 250,12 S330,15 410,15", fill: "none", stroke: "#D8B66A", "stroke-width": 3 }, orn);
-      const eq = L.h("div", { class: "abs h-title", style: { left: 0, width: "800px", top: "660px", textAlign: "center", fontSize: "52px", color: C.plum } }, plate, "Equipo 7");
+      const eq = L.h("div", { class: "abs h-title", style: { left: 0, width: "800px", top: "660px", textAlign: "center", fontSize: "52px", color: C.plum } }, plate, "Modelación estadística");
 
       // estrellitas doradas a lápiz sobre la piel
       const SKY = [[420, 92, 12, 1], [250, 268, 9, 0], [508, 530, 8, 0], [188, 520, 11, 1], [470, 770, 9, 0], [66, 880, 8, 1], [1460, 112, 11, 1], [1826, 330, 9, 0],

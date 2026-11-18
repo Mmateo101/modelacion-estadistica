@@ -91,7 +91,7 @@ window.DATA = {
   ],
 
   // Intervalo de la varianza de libros leídos, lectores con "Más de 100" libros en casa
-  // Bootstrap BCa (R: boot, R = 2000, set.seed(101), 96%) con DatosEquipo7_Etapa2.csv
+  // Bootstrap BCa (R: boot, R = 2000, set.seed(101), 96%) con datos/procesados/molec_analisis.csv
   varianzaMas100: { n: 342, s2: 115.0, li: 71.70, ls: 194.45, R: 2000 },
 
   // 6.6 Ji-cuadrada hogar × escuela (filas: hogar 0–4; columnas: escuela 0–4)

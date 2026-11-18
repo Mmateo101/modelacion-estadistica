@@ -1,0 +1,540 @@
+---
+title: "Reporte final: gráficas y tablas por sección"
+subtitle: "Desigualdad en el acceso a la lectura en México — MOLEC 2019-2024"
+format:
+  html:
+    toc: true
+    df-print: paged
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+library(e1071) # sesgo y curtosis
+library(boot)  # intervalo bootstrap de la varianza
+
+datos = read.csv("../datos/procesados/molec_analisis.csv") # base preparada en la Etapa 2
+
+alfa = 0.04
+nc = 1 - alfa
+z = qnorm(1 - alfa/2)
+
+niveles = c("Bajo (0-1)", "Medio (2)", "Alto (3-4)")
+datos$acceso_hogar = factor(datos$acceso_hogar, levels = niveles)
+datos$acceso_esc3 = cut(datos$ind_escuela, breaks = c(-1, 1, 2, 4), labels = niveles)
+datos$acceso_escuela = factor(datos$acceso_escuela, levels = c("Bajo (0-2)", "Alto (3-4)"))
+datos$libros_casa = factor(datos$libros_casa,
+                           levels = c("Ninguno", "1-25", "26-50", "51-75", "76-100", "Más de 100"))
+datos$escolaridad = factor(datos$escolaridad,
+                           levels = c("Primaria o menos", "Secundaria", "Media superior", "Superior"))
+datos$grupo_edad = factor(datos$grupo_edad, levels = c("18-29", "30-44", "45-59", "60+"))
+
+lect = subset(datos, datos$lee == 1) # solo lectores
+colores = c("#d1495b", "#edae49", "#00798c")
+```
+
+# III. Metodología
+
+## Tabla 1. Variables seleccionadas (datos faltantes)
+
+```{r}
+faltantes = c(lee = sum(is.na(datos$lee)),
+              libros = sum(is.na(lect$libros)),
+              ind_hogar = sum(is.na(datos$ind_hogar)),
+              ind_escuela = sum(is.na(datos$ind_escuela)),
+              libros_casa = sum(is.na(datos$libros_casa)),
+              escolaridad = sum(is.na(datos$escolaridad)),
+              edad = sum(is.na(datos$edad)))
+total = c(nrow(datos), nrow(lect), rep(nrow(datos), 5))
+data.frame(Faltantes = faltantes, Porcentaje = round(100 * faltantes / total, 1))
+```
+
+# IV. Resultados
+
+## 4.1 Análisis descriptivo
+
+### Tabla 3. Medidas descriptivas de las variables cuantitativas
+
+```{r}
+medidas = function(x) {
+  x = x[!is.na(x)]
+  c(n = length(x), Media = mean(x), Mediana = median(x), RangoMedio = (max(x) + min(x)) / 2,
+    DesvEst = sd(x), CV = 100 * sd(x) / mean(x), Q1 = unname(quantile(x, 0.25)),
+    Q3 = unname(quantile(x, 0.75)), Min = min(x), Max = max(x),
+    Sesgo = skewness(x), Curtosis = kurtosis(x))
+}
+round(rbind(Libros = medidas(lect$libros), Edad = medidas(datos$edad),
+            Indice_hogar = medidas(datos$ind_hogar), Indice_escuela = medidas(datos$ind_escuela)), 2)
+
+round(100 * mean(datos$lee), 1)                          # % de lectores
+x = lect$libros
+sum(x > quantile(x, 0.75) + 1.5 * IQR(x))                # datos atípicos
+```
+
+### Figura 1. Histograma y diagrama de caja del número de libros leídos
+
+```{r}
+par(mfrow = c(1, 2))
+hist(x[x <= 30], breaks = seq(0.5, 30.5, 1), col = "#2a6f97", border = "white",
+     main = "Libros leídos (hasta 30)", xlab = "Número de libros", ylab = "Frecuencia")
+boxplot(x, horizontal = TRUE, col = "#2a6f97", ylim = c(0, 100),
+        main = "Libros leídos", xlab = "Número de libros")
+```
+
+### Figura 2. Porcentaje de lectores por nivel de los índices de acceso
+
+```{r}
+pct_hogar = round(100 * tapply(datos$lee, datos$ind_hogar, mean), 1)
+pct_escuela = round(100 * tapply(datos$lee, datos$ind_escuela, mean), 1)
+rbind(Hogar = pct_hogar, Escuela = pct_escuela)
+round(100 * tapply(datos$lee, datos$libros_casa, mean), 1)
+
+par(mfrow = c(1, 2))
+b = barplot(pct_hogar, col = "#2a6f97", ylim = c(0, 80), main = "Acceso en el hogar",
+            xlab = "Número de estímulos", ylab = "% que leyó libros")
+text(b, pct_hogar + 5, paste0(pct_hogar, "%"), cex = 0.8)
+b = barplot(pct_escuela, col = "#2a6f97", ylim = c(0, 80), main = "Acceso en la escuela",
+            xlab = "Número de estímulos", ylab = "% que leyó libros")
+text(b, pct_escuela + 5, paste0(pct_escuela, "%"), cex = 0.8)
+```
+
+### Figura 3. Porcentaje de lectores por escolaridad y acceso en el hogar
+
+```{r}
+round(100 * tapply(datos$lee, datos$escolaridad, mean), 1)
+round(100 * prop.table(table(datos$acceso_hogar, datos$escolaridad), 2), 1)
+tab_esc = round(100 * tapply(datos$lee, list(datos$acceso_hogar, datos$escolaridad), mean), 1)
+tab_esc
+
+par(mar = c(4, 4, 2, 9), xpd = TRUE)
+b = barplot(tab_esc, beside = TRUE, col = colores, ylim = c(0, 90),
+            ylab = "% que leyó libros", xlab = "Escolaridad")
+text(b, tab_esc + 4, round(tab_esc), cex = 0.75)
+legend("topright", inset = c(-0.25, 0), legend = rownames(tab_esc), fill = colores,
+       title = "Acceso en el hogar", bty = "n", cex = 0.8)
+```
+
+### Tabla 4. Porcentaje de lectores según el acceso en el hogar y en la escuela
+
+```{r}
+round(100 * tapply(datos$lee, list(datos$acceso_hogar, datos$acceso_escuela), mean), 1)
+table(datos$acceso_hogar, datos$acceso_escuela)
+round(100 * prop.table(table(datos$acceso_hogar, datos$acceso_escuela), 1), 1)
+```
+
+### Figura 4. Diagramas de caja de libros leídos según el acceso en el hogar y los libros en casa
+
+```{r}
+round(data.frame(n = tapply(lect$libros, lect$acceso_hogar, length),
+                 media = tapply(lect$libros, lect$acceso_hogar, mean),
+                 mediana = tapply(lect$libros, lect$acceso_hogar, median),
+                 desv = tapply(lect$libros, lect$acceso_hogar, sd)), 2)
+round(100 * tapply(lect$libros > 5, lect$acceso_hogar, mean), 1)
+
+par(mfrow = c(1, 2), mar = c(4, 7, 2, 1))
+boxplot(libros ~ acceso_hogar, data = lect, horizontal = TRUE, col = colores, ylim = c(0, 30),
+        las = 1, main = "Acceso en el hogar", xlab = "Libros leídos", ylab = "", cex.axis = 0.75)
+points(tapply(lect$libros, lect$acceso_hogar, mean), 1:3, pch = 18, cex = 1.4)
+boxplot(libros ~ libros_casa, data = lect, horizontal = TRUE, col = "#2a6f97", ylim = c(0, 30),
+        las = 1, main = "Libros en casa", xlab = "Libros leídos", ylab = "", cex.axis = 0.75)
+points(tapply(lect$libros, lect$libros_casa, mean), 1:6, pch = 18, cex = 1.4)
+```
+
+## 4.2 Intervalos de confianza
+
+### Tabla 5. Intervalos de confianza al 96%
+
+```{r}
+ic_prop = function(x) {
+  x = x[!is.na(x)]
+  n = length(x); p = mean(x)
+  e = z * sqrt(p * (1 - p) / n)
+  c(n = n, p = p, LI = p - e, LS = p + e, np = n * p, nq = n * (1 - p))
+}
+ic_dif_prop = function(x1, x2) {
+  x1 = x1[!is.na(x1)]; x2 = x2[!is.na(x2)]
+  p1 = mean(x1); p2 = mean(x2); n1 = length(x1); n2 = length(x2)
+  e = z * sqrt(p1 * (1 - p1) / n1 + p2 * (1 - p2) / n2)
+  c(p1 = p1, p2 = p2, dif = p1 - p2, LI = p1 - p2 - e, LS = p1 - p2 + e)
+}
+
+# Proporción de lectores por nivel de acceso en el hogar (z)
+IC_hogar = t(sapply(niveles, function(k) ic_prop(datos$lee[datos$acceso_hogar == k])))
+round(IC_hogar, 4)
+
+# Diferencia de proporciones: superior - primaria o menos (z)
+IC_esc = ic_dif_prop(datos$lee[datos$escolaridad == "Superior"],
+                     datos$lee[datos$escolaridad == "Primaria o menos"])
+round(IC_esc, 4)
+
+# Diferencia de proporciones con acceso bajo en casa: escuela alta - escuela baja (z)
+bajo_casa = subset(datos, datos$acceso_hogar == "Bajo (0-1)")
+IC_comp = ic_dif_prop(bajo_casa$lee[bajo_casa$acceso_escuela == "Alto (3-4)"],
+                      bajo_casa$lee[bajo_casa$acceso_escuela == "Bajo (0-2)"])
+round(IC_comp, 4)
+
+# Diferencia de medias de libros: acceso alto - bajo en el hogar (t de Welch)
+lib_alto = lect$libros[lect$acceso_hogar == "Alto (3-4)" & !is.na(lect$acceso_hogar)]
+lib_bajo = lect$libros[lect$acceso_hogar == "Bajo (0-1)" & !is.na(lect$acceso_hogar)]
+c(n_alto = length(lib_alto), media_alto = mean(lib_alto), sd_alto = sd(lib_alto),
+  n_bajo = length(lib_bajo), media_bajo = mean(lib_bajo), sd_bajo = sd(lib_bajo))
+t.test(lib_alto, lib_bajo, var.equal = FALSE, conf.level = nc)$conf.int
+
+# Varianza de libros, lectores con más de 100 libros en casa (bootstrap BCa)
+x100 = lect$libros[lect$libros_casa == "Más de 100" & !is.na(lect$libros_casa)]
+c(n = length(x100), varianza = var(x100))
+set.seed(101)
+b100 = boot(x100, function(x, i) var(x[i]), R = 2000) # 2000 remuestreos
+boot.ci(b100, conf = nc, type = "bca")
+```
+
+### Figura 5. Intervalos de confianza para la proporción de lectores por nivel de acceso
+
+```{r}
+IC_esc3 = t(sapply(niveles, function(k) ic_prop(datos$lee[datos$acceso_esc3 == k])))
+round(IC_esc3, 4)
+
+par(mfrow = c(1, 2), mar = c(4, 7, 2, 1))
+for (g in list(list(IC_hogar, "Acceso en el hogar"), list(IC_esc3, "Acceso en la escuela"))) {
+  M = g[[1]]
+  plot(0, ylim = c(0.5, 3.5), xlim = c(0.2, 0.7), yaxt = "n", ylab = "",
+       xlab = "Proporción de lectores", main = g[[2]])
+  axis(2, at = 1:3, labels = niveles, las = 1, cex.axis = 0.8)
+  arrows(M[, "LI"], 1:3, M[, "LS"], 1:3, angle = 90, code = 3, length = 0.05, lwd = 2, col = colores)
+  points(M[, "p"], 1:3, pch = 19, col = colores)
+  text(M[, "p"], 1:3 + 0.3, sprintf("%.1f%%", 100 * M[, "p"]), cex = 0.75)
+}
+```
+
+## 4.3 Pruebas de hipótesis
+
+### Prueba 1. Independencia entre el acceso en el hogar y en la escuela (ji-cuadrada)
+
+```{r}
+T = table(Hogar = datos$ind_hogar, Escuela = datos$ind_escuela)
+addmargins(T)
+chi = chisq.test(T)
+min(chi$expected)                       # frecuencia esperada más pequeña
+gl = (nrow(T) - 1) * (ncol(T) - 1)
+chi_f = qchisq(1 - alfa, gl)            # valor frontera
+c(chi2 = unname(chi$statistic), gl = gl, frontera = chi_f, p = chi$p.value)
+round(100 * prop.table(T, 1), 1)        # porcentaje por renglón
+```
+
+### Prueba 2. Lectores con estímulos solo en casa vs solo en la escuela (z)
+
+```{r}
+solo_casa = subset(datos, datos$ind_hogar > 0 & datos$ind_escuela == 0)
+solo_esc  = subset(datos, datos$ind_hogar == 0 & datos$ind_escuela > 0)
+x = c(sum(solo_casa$lee), sum(solo_esc$lee)); n = c(nrow(solo_casa), nrow(solo_esc))
+rbind(Lectores = x, Total = n, Proporcion = round(x / n, 4))
+
+pc = sum(x) / sum(n)
+ze_ce = (x[1]/n[1] - x[2]/n[2]) / sqrt(pc * (1 - pc) * (1/n[1] + 1/n[2]))
+zf_ce = qnorm(1 - alfa/2)
+c(z = ze_ce, frontera = zf_ce, p = 2 * pnorm(-abs(ze_ce)))
+prop.test(x, n, conf.level = nc, correct = FALSE)
+```
+
+### Prueba 3. Diferencias de proporción entre niveles de acceso (z)
+
+```{r}
+prueba_z = function(x1, x2) {
+  x1 = x1[!is.na(x1)]; x2 = x2[!is.na(x2)]
+  p1 = mean(x1); p2 = mean(x2); n1 = length(x1); n2 = length(x2)
+  pc = (sum(x1) + sum(x2)) / (n1 + n2)
+  se = sqrt(pc * (1 - pc) * (1/n1 + 1/n2))
+  c(p1 = p1, p2 = p2, dif = p2 - p1, frontera = qnorm(1 - alfa/2) * se,
+    z = (p2 - p1) / se, p = 2 * pnorm(-abs((p2 - p1) / se)))
+}
+pares = list(c(1, 2), c(2, 3), c(1, 3))
+comparar = function(acc) t(sapply(pares, function(pr)
+  prueba_z(datos$lee[acc == niveles[pr[1]]], datos$lee[acc == niveles[pr[2]]])))
+Z_hogar = comparar(datos$acceso_hogar)
+Z_esc   = comparar(datos$acceso_esc3)
+rownames(Z_hogar) = rownames(Z_esc) = c("Bajo-Medio", "Medio-Alto", "Bajo-Alto")
+round(Z_hogar, 4)
+round(Z_esc, 4)
+```
+
+### Prueba 4. Media de libros: acceso alto vs bajo en el hogar (t, una cola)
+
+```{r}
+prueba_t = t.test(lib_alto, lib_bajo, alternative = "greater", var.equal = FALSE, conf.level = nc)
+tf = qt(1 - alfa, prueba_t$parameter)   # valor frontera
+c(t = unname(prueba_t$statistic), gl = unname(prueba_t$parameter), frontera = tf,
+  p = prueba_t$p.value)
+```
+
+### Supuestos de la prueba 4: normalidad e igualdad de varianzas
+
+```{r}
+shapiro.test(lib_alto)                               # normalidad, acceso alto
+shapiro.test(lib_bajo)                               # normalidad, acceso bajo
+var.test(lib_alto, lib_bajo, conf.level = nc)        # prueba F de cociente de varianzas
+```
+
+### Prueba 5. Proporción de lectores entre niveles consecutivos de escolaridad (z)
+
+```{r}
+niv_esc = levels(datos$escolaridad)
+Z_escol = t(sapply(1:3, function(i)
+  prueba_z(datos$lee[datos$escolaridad == niv_esc[i]], datos$lee[datos$escolaridad == niv_esc[i + 1]])))
+rownames(Z_escol) = c("Primaria-Secundaria", "Secundaria-Media superior", "Media superior-Superior")
+round(Z_escol, 4)
+# IC 96% de cada diferencia
+t(sapply(1:3, function(i) round(ic_dif_prop(datos$lee[datos$escolaridad == niv_esc[i + 1]],
+                                            datos$lee[datos$escolaridad == niv_esc[i]]), 4)))
+```
+
+### Figura 6. Distribución muestral, valor frontera y estadístico de las pruebas 1, 2 y 4
+
+```{r}
+par(mfrow = c(1, 3), mar = c(4, 1, 2.5, 1))
+# Ji-cuadrada con 16 gl (eje en escala logarítmica)
+xc = exp(seq(log(1), log(4000), length = 400))
+plot(xc, dchisq(xc, gl), type = "l", lwd = 3, log = "x", yaxt = "n", ylab = "",
+     xlab = "Ji-cuadrada (escala log)", main = "Independencia hogar-escuela")
+abline(h = 0)
+abline(v = chi_f, col = "red", lty = 3, lwd = 1.5); text(chi_f, 0.06, round(chi_f, 2), col = "red", cex = 0.8, pos = 4)
+abline(v = chi$statistic, col = "blue", lty = 3, lwd = 1.5); text(chi$statistic, 0.06, round(chi$statistic, 1), col = "blue", cex = 0.8, pos = 2)
+# z de dos colas
+xz = seq(-10, 10, 0.05)
+plot(xz, dnorm(xz), type = "l", lwd = 3, yaxt = "n", ylab = "", xlab = "z",
+     main = "Solo casa vs solo escuela")
+abline(h = 0)
+abline(v = c(-zf_ce, zf_ce), col = "red", lty = 3, lwd = 1.5)
+text(-zf_ce, 0.38, round(-zf_ce, 2), col = "red", cex = 0.8, pos = 2)
+text(zf_ce, 0.38, round(zf_ce, 2), col = "red", cex = 0.8, pos = 4)
+abline(v = ze_ce, col = "blue", lty = 3, lwd = 1.5); text(ze_ce, 0.2, round(ze_ce, 2), col = "blue", cex = 0.8, pos = 2)
+# t de una cola
+xt = seq(-6, 6, 0.05)
+plot(xt, dt(xt, prueba_t$parameter), type = "l", lwd = 3, yaxt = "n", ylab = "", xlab = "t",
+     main = "Libros: acceso alto vs bajo")
+abline(h = 0)
+abline(v = tf, col = "red", lty = 3, lwd = 1.5); text(tf, 0.38, round(tf, 2), col = "red", cex = 0.8, pos = 4)
+abline(v = prueba_t$statistic, col = "blue", lty = 3, lwd = 1.5)
+text(prueba_t$statistic, 0.2, round(prueba_t$statistic, 2), col = "blue", cex = 0.8, pos = 2)
+legend("topleft", c("Valor frontera", "Estadístico"), col = c("red", "blue"), lty = 3, cex = 0.7, bty = "n")
+```
+
+### Figura 7. Diferencia observada de proporciones frente a la zona de no rechazo
+
+```{r}
+par(mfrow = c(1, 2), mar = c(4, 7, 2, 1))
+for (g in list(list(Z_hogar, "Índice del hogar"), list(Z_esc, "Índice de la escuela"))) {
+  M = g[[1]]
+  plot(0, ylim = c(0.5, 3.5), xlim = c(-0.05, 0.35), yaxt = "n", ylab = "",
+       xlab = "Diferencia de proporciones", main = g[[2]])
+  axis(2, at = 1:3, labels = rownames(M), las = 1, cex.axis = 0.8)
+  abline(v = 0, col = "gray")
+  arrows(-M[, "frontera"], 1:3, M[, "frontera"], 1:3, angle = 90, code = 3, length = 0.04,
+         lwd = 2, col = "red")
+  points(M[, "dif"], 1:3, pch = 19, col = "blue")
+  text(M[, "dif"], 1:3 + 0.3, sprintf("%.3f", M[, "dif"]), cex = 0.75, col = "blue")
+}
+```
+
+# VIII. Anexos
+
+## Anexo 1. Tabla 1.1. Decisiones de preparación de los datos
+
+Ver `codigo/02_preparacion_variables.Rmd`, sección 1 (Preparación de los datos).
+
+## Anexo 2. Descripción individual complementaria
+
+### Figura 2.1. Porcentaje de personas según el número de estímulos
+
+```{r}
+par(mfrow = c(1, 2))
+p1 = round(100 * prop.table(table(datos$ind_hogar)), 1)
+b1 = barplot(p1, col = "#2a6f97", ylim = c(0, 50), main = "Acceso en el hogar",
+             xlab = "Número de estímulos", ylab = "% de personas")
+text(b1, p1 + 3, paste0(p1, "%"), cex = 0.8)
+p2 = round(100 * prop.table(table(datos$ind_escuela)), 1)
+b2 = barplot(p2, col = "#2a6f97", ylim = c(0, 50), main = "Acceso en la escuela",
+             xlab = "Número de estímulos", ylab = "% de personas")
+text(b2, p2 + 3, paste0(p2, "%"), cex = 0.8)
+```
+
+### Figura 2.2. Histograma y diagrama de caja de la edad
+
+```{r}
+par(mfrow = c(1, 2))
+hist(datos$edad, breaks = seq(15, 100, 5), col = "#2a6f97", border = "white",
+     main = "Edad", xlab = "Edad (años)", ylab = "Frecuencia")
+boxplot(datos$edad, horizontal = TRUE, col = "#2a6f97", main = "Edad", xlab = "Edad (años)")
+```
+
+### Figura 2.3. Escolaridad y libros en casa durante la infancia
+
+```{r}
+par(mfrow = c(1, 2), mar = c(6, 4, 2, 1))
+pe = round(100 * prop.table(table(datos$escolaridad)), 1)
+b = barplot(pe, col = "#2a6f97", las = 2, ylim = c(0, 45), main = "Escolaridad",
+            ylab = "% de personas", cex.names = 0.75)
+text(b, pe + 3, paste0(pe, "%"), cex = 0.8)
+pl = round(100 * prop.table(table(datos$libros_casa)), 1)
+b = barplot(pl, col = "#2a6f97", las = 2, ylim = c(0, 50), main = "Libros en casa (infancia)",
+            ylab = "% de personas", cex.names = 0.75)
+text(b, pl + 3, paste0(pl, "%"), cex = 0.8)
+```
+
+### Figura 2.4. Diagrama de dispersión de la edad y los libros leídos
+
+```{r}
+plot(lect$edad, lect$libros, col = "#2a6f97", pch = 21, ylim = c(0, 100),
+     xlab = "Edad (años)", ylab = "Libros leídos", main = "Edad y libros leídos (lectores)")
+cor(lect$edad, lect$libros)
+```
+
+### Tabla 2.1. Distribución de frecuencias de las variables ordinales
+
+```{r}
+frecuencias = function(v) {
+  f = table(v)
+  data.frame(Frecuencia = as.vector(f),
+             Porcentaje = round(100 * as.vector(prop.table(f)), 1),
+             Acumulado = round(100 * cumsum(prop.table(f)), 1),
+             row.names = names(f))
+}
+frecuencias(datos$escolaridad)
+frecuencias(datos$libros_casa)
+```
+
+## Anexo 3. Comparaciones complementarias
+
+### Tablas 3.1 y 3.2. Libros leídos según libros en casa y según escolaridad
+
+```{r}
+resumen_libros = function(g) {
+  round(data.frame(pct_lectores = 100 * tapply(datos$lee, datos[[g]], mean),
+                   n = tapply(lect$libros, lect[[g]], length),
+                   media = tapply(lect$libros, lect[[g]], mean),
+                   mediana = tapply(lect$libros, lect[[g]], median),
+                   Q1 = tapply(lect$libros, lect[[g]], quantile, 0.25),
+                   Q3 = tapply(lect$libros, lect[[g]], quantile, 0.75),
+                   desv = tapply(lect$libros, lect[[g]], sd)), 2)
+}
+resumen_libros("libros_casa")
+resumen_libros("escolaridad")
+```
+
+### Tabla 3.3. Acceso y lectores por grupo de edad
+
+```{r}
+round(rbind(`Índice hogar` = tapply(datos$ind_hogar, datos$grupo_edad, mean, na.rm = TRUE),
+            `Índice escuela` = tapply(datos$ind_escuela, datos$grupo_edad, mean, na.rm = TRUE),
+            `% lectores` = 100 * tapply(datos$lee, datos$grupo_edad, mean)), 2)
+round(100 * tapply(datos$lee, list(datos$acceso_hogar, datos$grupo_edad), mean), 1)
+```
+
+### Figura 3.1 y Tabla 3.4. Lectores por año según el acceso en el hogar
+
+```{r}
+pct_anio = round(100 * tapply(datos$lee, datos$anio, mean), 1)
+pct_anio_acc = round(100 * tapply(datos$lee, list(datos$acceso_hogar, datos$anio), mean), 1)
+rbind(Total = pct_anio, pct_anio_acc,
+      Brecha = pct_anio_acc["Alto (3-4)", ] - pct_anio_acc["Bajo (0-1)", ])
+round(rbind(Mediana = tapply(lect$libros, lect$anio, median),
+            Media = tapply(lect$libros, lect$anio, mean)), 2)
+
+par(mar = c(4, 4, 1, 9), xpd = TRUE)
+anios = 2019:2024
+plot(anios, pct_anio_acc[1, ], type = "o", col = colores[1], pch = 16, lwd = 2, ylim = c(0, 80),
+     xlab = "Año", ylab = "% que leyó libros")
+lines(anios, pct_anio_acc[2, ], type = "o", col = colores[2], pch = 16, lwd = 2)
+lines(anios, pct_anio_acc[3, ], type = "o", col = colores[3], pch = 16, lwd = 2)
+lines(anios, pct_anio, type = "o", col = "black", lty = 2)
+legend("topright", inset = c(-0.27, 0), legend = c(rownames(pct_anio_acc), "Total"),
+       col = c(colores, "black"), lty = c(1, 1, 1, 2), pch = c(16, 16, 16, 1),
+       title = "Acceso en el hogar", bty = "n", cex = 0.8)
+```
+
+## Anexo 4. Tabla de contingencia de los índices de acceso
+
+### Tabla 4.1. Frecuencias observadas
+
+Ver Prueba 1 (`addmargins(T)`).
+
+### Tabla 4.2. Porcentaje por renglón
+
+```{r}
+round(100 * prop.table(T, 1), 1)
+```
+
+## Anexo 5. Gráficas complementarias de los intervalos y las pruebas
+
+### Figura 5.1. Intervalos de confianza al 96% de las diferencias
+
+```{r fig-5-1}
+#| fig-width: 7.5
+#| fig-height: 2.4
+# Dibuja un intervalo horizontal con su estimación puntual y una línea en 0
+graficar_ic = function(est, li, ls, titulo, eje, color) {
+  margen = max((ls - li) * 0.6, ls * 0.15)
+  plot(0, type = "n", ylim = c(0, 2), xlim = c(min(0, li) - margen, ls + margen), yaxt = "n", ylab = "",
+       xlab = eje, main = titulo, cex.main = 0.9)
+  abline(v = 0, lty = 2, col = "gray50")
+  arrows(li, 1, ls, 1, angle = 90, code = 3, length = 0.08, lwd = 2, col = color)
+  points(est, 1, pch = 19, col = color)
+  text(c(li, ls), c(1, 1), sprintf("%.3f", c(li, ls)), pos = c(2, 4), cex = 0.75)
+  text(est, 1.4, sprintf("%.3f", est), cex = 0.75)
+}
+IC_med = t.test(lib_alto, lib_bajo, var.equal = FALSE, conf.level = nc)$conf.int
+par(mfrow = c(1, 3), mar = c(4, 1, 2.5, 1))
+graficar_ic(IC_esc["dif"], IC_esc["LI"], IC_esc["LS"], "Superior − primaria o menos",
+            "Diferencia de proporciones", "#00798c")
+graficar_ic(IC_comp["dif"], IC_comp["LI"], IC_comp["LS"], "Acceso bajo en casa: escuela alta − baja",
+            "Diferencia de proporciones", "#2a6f97")
+graficar_ic(mean(lib_alto) - mean(lib_bajo), IC_med[1], IC_med[2], "Libros: acceso alto − bajo",
+            "Diferencia de medias (libros)", "#d1495b")
+```
+
+### Figura 5.2. Intervalo bootstrap BCa de la varianza y la desviación estándar (más de 100 libros en casa)
+
+```{r fig-5-2}
+#| fig-width: 7.5
+#| fig-height: 2.4
+ic_b = boot.ci(b100, conf = nc, type = "bca")$bca[4:5]   # límites del intervalo BCa
+s2 = var(x100)
+par(mfrow = c(1, 2), mar = c(4, 1, 2.5, 1), cex = 0.66)
+for (g in list(list(s2, ic_b, "Varianza"), list(sqrt(s2), sqrt(ic_b), "Desviación estándar"))) {
+  plot(0, type = "n", ylim = c(0, 2), xlim = c(g[[2]][1] * 0.8, g[[2]][2] * 1.1), yaxt = "n", ylab = "",
+       xlab = paste(g[[3]], "(libros)"), main = g[[3]], cex.main = 0.9)
+  arrows(g[[2]][1], 1, g[[2]][2], 1, angle = 90, code = 3, length = 0.08, lwd = 2, col = "#2a6f97")
+  abline(v = g[[1]], col = "red", lwd = 2)
+  text(g[[2]], c(0.6, 0.6), sprintf("%.2f", g[[2]]), cex = 0.75)
+  text(g[[1]], 1.5, sprintf("%.2f", g[[1]]), pos = 4, cex = 0.75)
+}
+```
+
+### Figura 5.3. Proporción de lectores con estímulos solo en la escuela y solo en el hogar
+
+```{r fig-5-3}
+#| fig-width: 4.5
+#| fig-height: 3
+p_g = c(Escuela = x[2] / n[2], Hogar = x[1] / n[1])                       # solo escuela, solo hogar
+e_g = z * sqrt(p_g * (1 - p_g) / c(n[2], n[1]))                           # margen de error al 96%
+par(mar = c(4, 4, 2, 1))
+bp = barplot(p_g, ylim = c(0, 1), col = c("skyblue", "orange"), ylab = "Proporción",
+             names.arg = c("Solo escuela", "Solo hogar"), main = "Proporción de lectores (IC 96%)")
+arrows(bp, p_g - e_g, bp, p_g + e_g, angle = 90, code = 3, length = 0.1, lwd = 2)
+text(bp, p_g + e_g + 0.06, sprintf("%.1f%%", 100 * p_g), cex = 0.85)
+```
+
+### Figura 5.4. Porcentaje de lectores por escolaridad y pruebas z entre niveles consecutivos
+
+```{r fig-5-4}
+#| fig-width: 6.5
+#| fig-height: 3.2
+pct_escol = 100 * tapply(datos$lee, datos$escolaridad, mean)
+par(mar = c(4, 4, 2, 1))
+b = barplot(pct_escol, col = "#2a6f97", ylim = c(0, 85), ylab = "% que leyó libros",
+            cex.names = 0.8, main = "Lectores por escolaridad")
+text(b, pct_escol + 4, sprintf("%.1f%%", pct_escol), cex = 0.8)
+etiquetas = sprintf("+%.1f pts\nz = %.2f", 100 * Z_escol[, "dif"], Z_escol[, "z"])
+xm = (b[-1] + b[-4]) / 2                                   # punto medio entre barras vecinas
+text(xm, 78, etiquetas, cex = 0.7, col = ifelse(abs(Z_escol[, "z"]) > zf_ce, "black", "gray50"))
+```

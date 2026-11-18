@@ -1,0 +1,512 @@
+---
+title: "Etapa 2: Comprensión y preparación de los datos"
+subtitle: "Desigualdad en el acceso a la lectura en México — MOLEC 2019-2024"
+author: "Mateo Rodolfo Flores Torres, Eliel Silva Morales, César Julián Leal Salazar, Fernando Isaac Martínez García"
+date: "2026-10-07"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+library(e1071) # para calcular sesgo y curtosis
+```
+
+En este documento se prepara la base de datos y se hace el análisis descriptivo de las variables que seleccionamos para responder nuestra pregunta de investigación.
+
+**Pregunta general:** ¿Cómo se relaciona la desigualdad en el acceso a la lectura durante la infancia con los hábitos de lectura de libros en la edad adulta?
+
+* **a)** ¿Cómo se relaciona con la decisión de leer o no leer libros? (variable p3_1)
+* **b)** ¿Cómo se relaciona con la cantidad de libros leídos? (variable p4)
+
+Seguimos tres pasos: (1) preparación de los datos, (2) descripción individual de las variables y (3) vinculación entre variables, incluyendo su evolución a través de los años.
+
+# 1. Preparación de los datos
+
+## 1.1 Lectura de los datos
+
+Partimos de la base que construimos en la Etapa 1 (`molec_2019_2024.csv`), que junta los seis años del MOLEC (2019 a 2024) con las variables que habíamos seleccionado.
+
+```{r}
+M19_24 = read.csv("../datos/procesados/molec_2019_2024.csv")
+dim(M19_24) # registros y columnas
+table(M19_24$anio_encuesta) # registros por año
+
+base = M19_24[, 1:26] # Nos quedamos con las 26 columnas originales
+```
+
+Cada registro es una persona de 18 años o más entrevistada en una de las 32 ciudades del MOLEC (una por entidad). Las preguntas y sus códigos son iguales en los seis años, por lo que se pueden juntar.
+
+## 1.2 Variables de interés
+
+Pregunta 3a: En los últimos doce meses, ¿leyó libros?
+    - Nombre en la base: p3_1
+    - Variable cualitativa: 1 = Sí, 2 = No, 0 = blanco por pase (personas que no saben leer)
+    
+Pregunta 4: ¿Cuántos libros leyó en los últimos doce meses?
+    - Nombre en la base: p4
+    - Variable cuantitativa: número de libros. 0 = blanco por pase (no leyó libros o no sabe leer)
+    
+Pregunta 34: Cuando usted era niño(a)... a) ¿lo llevaban a bibliotecas o librerías? b) ¿veía a sus padres leer? c) ¿le leían? d) ¿había libros en su casa?
+    - Nombres en la base: p34_1, p34_2, p34_3, p34_4
+    - Variables cualitativas: 1 = Sí, 2 = No, 3 = No recuerda, 0 = blanco por pase
+    
+Pregunta 34d1: ¿Aproximadamente cuántos libros había en su casa?
+    - Nombre en la base: p34_4_1
+    - Variable cualitativa ordinal: 1 = 1 a 25, 2 = 26 a 50, 3 = 51 a 75, 4 = 76 a 100, 5 = más de 100, 6 = No recuerda
+
+Pregunta 35: ¿Asistió a la escuela primaria? (p35: 1 = Sí, 2 = No)
+
+Pregunta 36: En su primaria, sus maestros... a) ¿le pedían leer otros libros? b) ¿le pedían comentar lo leído? c) ¿lo motivaban a leer? d) ¿lo animaban a visitar bibliotecas?
+    - Nombres en la base: p36_1, p36_2, p36_3, p36_4
+    - Variables cualitativas: 1 = Sí, 2 = No, 3 = No recuerda, 0 = blanco por pase
+Nivel de escolaridad (nivel): 0 = Ninguno a 9 = Doctorado, 99 = No sabe
+Edad (edad): variable cuantitativa en años
+Año de la encuesta (anio_encuesta): 2019 a 2024
+
+## 1.3 Calidad de los datos
+
+### Población del análisis
+
+```{r}
+table(base$p3_1)   # 0 = no sabe leer, 1 = leyó libros, 2 = no leyó libros
+alfa = subset(base, base$p3_1 != 0)
+nrow(alfa)
+```
+
+Las 281 personas que no saben leer terminan ahí la entrevista, así que las excluimos. Trabajamos con 11,685 personas alfabetas.
+
+### Valores faltantes y códigos especiales
+
+```{r}
+sum(is.na(alfa)) # no hay NA: la falta de respuesta viene codificada
+
+# "No recuerda" (código 3) en las preguntas de la infancia
+sapply(alfa[, c("p34_1","p34_2","p34_3","p34_4","p36_1","p36_2","p36_3","p36_4")],
+       function(x) sum(x == 3))
+sum(alfa$p34_4_1 == 6)  # "No recuerda" cuántos libros había
+sum(alfa$nivel == 99) # escolaridad "No sabe"
+
+# Quien no fue a la primaria (p35 = 2) no contesta la pregunta 36
+table(alfa$p35, alfa$p36_1 == 0)
+```
+
+El 0 no es un dato faltante: es un **blanco por pase**, es decir, la pregunta no le tocaba a esa persona. Los códigos "No recuerda" y "No sabe" sí son faltantes. Dos personas que dijeron no haber ido a la primaria sí tienen respuestas en la pregunta 36, lo cual no sigue el flujo del cuestionario.
+
+### Valores fuera de rango
+
+```{r}
+range(alfa$edad) # 18 a 97 años: todo en rango
+table(alfa$p3_1, alfa$p4 > 0)  # todos los lectores tienen p4 > 0
+sort(unique(alfa$p4)) # valores de p4
+```
+
+Todos los lectores tienen al menos un libro y nadie que no lee tiene libros registrados. El valor 99 de p4 aparece en un solo registro (2022) y está separado del resto (el siguiente valor es 80). Revisamos el diccionario de datos: el rango de p4 es "01...99, blanco", es decir, el 99 está dentro de los valores válidos y no es un código de "No sabe" (a diferencia de la edad, donde el diccionario sí marca el 98 y el 99 como códigos aparte). Por eso lo **conservamos** como una persona que leyó 99 libros.
+
+### Registros duplicados
+
+```{r}
+# Filas repetidas en nuestras 26 variables
+sum(duplicated(base))
+head(base[duplicated(base) | duplicated(base, fromLast = TRUE), ], 6)
+
+# Revisamos las mismas filas en las bases originales, con TODAS sus columnas
+# (incluyen folio, control y factor, que identifican a cada persona)
+
+M19 = read.csv("../datos/crudos/Datos_molec_2019-1.csv", fileEncoding = "latin1")
+M20 = read.csv("../datos/crudos/Datos_molec_2020-1.csv", fileEncoding = "latin1")
+M21 = read.csv("../datos/crudos/Datos_molec_2021-1.CSV", fileEncoding = "latin1")
+M22 = read.csv("../datos/crudos/Datos_molec_2022-1.CSV", fileEncoding = "latin1")
+M23 = read.csv("../datos/crudos/Datos_molec_2023-1.CSV", fileEncoding = "latin1")
+M24 = read.csv("../datos/crudos/Datos_molec_2024-1.csv", fileEncoding = "latin1")
+
+c(sum(duplicated(M19)), sum(duplicated(M20)), sum(duplicated(M21)), sum(duplicated(M22)), sum(duplicated(M23)), sum(duplicated(M24)))
+```
+
+Hay 21 filas repetidas en nuestras 26 variables. Son personas que no saben leer o que contestaron "No" a todo. Sin embargo, en las bases originales con todas sus columnas **no hay ningún registro duplicado**, así que son personas distintas que contestaron lo mismo; por eso **se conservan**.
+
+## 1.4 Nuevas variables
+
+```{r}
+d = alfa
+
+# ¿Lee libros? 1 = Sí, 0 = No
+d$lee = ifelse(d$p3_1 == 1, 1, 0)
+
+# Libros leídos: solo para lectores (para los no lectores el 0 es blanco por pase)
+d$libros = ifelse(d$p3_1 == 1, d$p4, NA)
+
+# Índice de acceso en el hogar (0 a 4): cuántos "Sí" tiene en p34a, p34b, p34c y p34d
+hogar = d[, c("p34_1","p34_2","p34_3","p34_4")]
+hogar[hogar == 3] = NA                 # "No recuerda" = faltante
+d$ind_hogar = rowSums(hogar == 1)      # si falta una respuesta, el índice queda NA
+
+# Índice de acceso en la escuela (0 a 4): cuántos "Sí" tiene en p36a, p36b, p36c y p36d
+escuela = d[, c("p36_1","p36_2","p36_3","p36_4")]
+escuela[escuela == 3] = NA
+d$ind_escuela = rowSums(escuela == 1)
+d$ind_escuela[d$p35 == 2] = 0          # no fue a la primaria: no recibió estímulos escolares
+
+# Grupos de acceso para comparar
+d$acceso_hogar = cut(d$ind_hogar, breaks = c(-1, 1, 2, 4),
+                     labels = c("Bajo (0-1)", "Medio (2)", "Alto (3-4)"))
+d$acceso_escuela = cut(d$ind_escuela, breaks = c(-1, 2, 4),
+                       labels = c("Bajo (0-2)", "Alto (3-4)"))
+
+# Libros en casa en la infancia: une p34d (había libros) y p34d1 (cuántos)
+d$libros_casa = NA
+d$libros_casa[d$p34_4 == 2] = 0
+d$libros_casa[d$p34_4 == 1 & d$p34_4_1 <= 5] = d$p34_4_1[d$p34_4 == 1 & d$p34_4_1 <= 5]
+d$libros_casa = factor(d$libros_casa, levels = 0:5,
+                       labels = c("Ninguno", "1-25", "26-50", "51-75", "76-100", "Más de 100"))
+
+# Escolaridad agrupada; 99 = No sabe se toma como faltante
+d$escolaridad = cut(ifelse(d$nivel == 99, NA, d$nivel), breaks = c(-1, 2, 3, 6, 9),
+                    labels = c("Primaria o menos", "Secundaria", "Media superior", "Superior"))
+
+# Grupos de edad y año
+d$grupo_edad = cut(d$edad, breaks = c(17, 29, 44, 59, 97),
+                   labels = c("18-29", "30-44", "45-59", "60+"))
+d$anio = factor(d$anio_encuesta)
+```
+
+Construimos la variable **acceso** como dos índices. El índice del hogar suma cuántos estímulos recibió la persona de niña en su casa y el índice de la escuela suma cuántos estímulos le dieron sus maestros de primaria. Cada uno va de 0 (ningún estímulo) a 4 (todos).
+
+### Datos faltantes de las variables finales
+
+```{r}
+faltantes = c(lee = sum(is.na(d$lee)),
+              libros = sum(is.na(d$libros[d$lee == 1])),
+              ind_hogar = sum(is.na(d$ind_hogar)),
+              ind_escuela = sum(is.na(d$ind_escuela)),
+              libros_casa = sum(is.na(d$libros_casa)),
+              escolaridad = sum(is.na(d$escolaridad)),
+              edad = sum(is.na(d$edad)))
+total = c(nrow(d), sum(d$lee == 1), rep(nrow(d), 5))
+data.frame(Faltantes = faltantes, Porcentaje = round(100 * faltantes / total, 1))
+```
+
+## 1.5 Base preparada
+
+```{r}
+datos = d[, c("anio", "lee", "libros", "ind_hogar", "ind_escuela", "acceso_hogar",
+              "acceso_escuela", "libros_casa", "escolaridad", "edad", "grupo_edad", "sexo")]
+write.csv(datos, "../datos/procesados/molec_analisis.csv", row.names = FALSE)
+dim(datos)
+
+# Base solo de lectores para analizar cuántos libros leen
+lect = subset(d, d$lee == 1 & !is.na(d$libros))
+```
+
+# 2. El análisis descriptivo
+
+## 2.1 Variable cuantitativa: ¿Cuántos libros leyó en los últimos doce meses?
+
+### Medidas
+
+```{r}
+x = lect$libros
+medidas_libros = c(summary(x), (max(x) + min(x)) / 2, # rango medio
+                   sd(x), 100 * sd(x) / mean(x), # coeficiente de variación en %
+                   skewness(x), kurtosis(x))
+names(medidas_libros) = c("Mínimo", "Q1", "Mediana", "Media", "Q3", "Máximo",
+                          "Rango medio", "Desv Est", "CV (%)", "Sesgo", "Curtosis")
+round(medidas_libros, 2)
+
+# Límite a partir del cual el boxplot marca datos atípicos: Q3 + 1.5*RIC
+Q3 = quantile(x, 0.75); RIC = IQR(x)
+Q3 + 1.5 * RIC
+sum(x > Q3 + 1.5 * RIC)
+round(100 * mean(x > Q3 + 1.5 * RIC), 1)
+```
+
+### Gráficos
+
+```{r}
+par(mfrow = c(1, 2))
+hist(x[x <= 30], breaks = seq(0.5, 30.5, 1), col = "#2a6f97", border = "white",
+     main = "Libros leídos (hasta 30)", xlab = "Número de libros", ylab = "Frecuencia")
+boxplot(x, horizontal = TRUE, col = "#2a6f97", ylim = c(0, 100),
+        main = "Libros leídos", xlab = "Número de libros")
+```
+
+### Interpreta
+
+La distribución tiene un sesgo muy fuerte a la derecha (sesgo = 7.29): la mayoría de los lectores leyó pocos libros y unos cuantos leyeron muchísimos. La mitad leyó 2 libros o menos (mediana) y el 75% leyó 4 o menos (Q3). La media (3.53) es mayor que la mediana porque los lectores que leyeron 30, 50 o hasta 99 libros la jalan hacia arriba; por eso la mediana describe mejor al lector típico. El rango medio (50) no representa a nadie. La dispersión es muy grande: la desviación estándar es 1.5 veces la media (CV = 153%). La curtosis tan alta (75.2) confirma que hay valores muy alejados del resto: 307 lectores (6.3%) son datos atípicos, es decir, leyeron más de 8.5 libros. No son errores, sino lectores muy intensos.
+
+## 2.2 Variables cuantitativas: índices de acceso
+
+### Medidas
+
+```{r}
+medidas = function(x) {
+  x = x[!is.na(x)]
+  c(summary(x), (max(x) + min(x)) / 2, sd(x), 100 * sd(x) / mean(x), skewness(x), kurtosis(x))
+}
+M = data.frame(medidas(d$ind_hogar), medidas(d$ind_escuela), medidas(d$edad))
+names(M) = c("Índice hogar", "Índice escuela", "Edad")
+row.names(M) = c("Mínimo", "Q1", "Mediana", "Media", "Q3", "Máximo",
+                 "Rango medio", "Desv Est", "CV (%)", "Sesgo", "Curtosis")
+round(M, 2)
+
+# Proporción de personas en cada valor del índice
+round(100 * prop.table(table(d$ind_hogar)), 1)
+round(100 * prop.table(table(d$ind_escuela)), 1)
+```
+
+### Gráficos
+
+```{r}
+par(mfrow = c(1, 2))
+p1 = round(100 * prop.table(table(d$ind_hogar)), 1)
+b1 = barplot(p1, col = "#2a6f97", ylim = c(0, 50), main = "Acceso en el hogar",
+             xlab = "Número de estímulos", ylab = "% de personas")
+text(b1, p1 + 3, paste0(p1, "%"), cex = 0.8)
+p2 = round(100 * prop.table(table(d$ind_escuela)), 1)
+b2 = barplot(p2, col = "#2a6f97", ylim = c(0, 50), main = "Acceso en la escuela",
+             xlab = "Número de estímulos", ylab = "% de personas")
+text(b2, p2 + 3, paste0(p2, "%"), cex = 0.8)
+```
+
+```{r}
+par(mfrow = c(1, 2))
+hist(d$edad, breaks = seq(15, 100, 5), col = "#2a6f97", border = "white",
+     main = "Edad", xlab = "Edad (años)", ylab = "Frecuencia")
+boxplot(d$edad, horizontal = TRUE, col = "#2a6f97", main = "Edad", xlab = "Edad (años)")
+```
+
+### Interpreta
+
+El acceso en el hogar es muy desigual: 29.0% de las personas no recibió ninguno de los cuatro estímulos y solo 17.6% recibió los cuatro. Las barras tienen alturas parecidas en los demás valores, por eso la curtosis es negativa (distribución aplanada). El acceso en la escuela está más extendido: casi la mitad (43.9%) recibió los cuatro estímulos, la mediana es 3 y el sesgo es negativo (los datos se concentran en los valores altos). También es más parejo: su CV (56%) es menor que el del hogar (83%). La edad tiene una distribución casi simétrica (media 45.2 y mediana 44 años, sesgo 0.33): la mitad de las personas tiene entre 31 y 57 años.
+
+## 2.3 Variable cualitativa: ¿Leyó libros en los últimos doce meses?
+
+### Medidas
+
+```{r}
+round(100 * prop.table(table(d$lee)), 1)       # 0 = No, 1 = Sí
+# Por año
+N = round(100 * prop.table(table(d$anio, d$lee), 1), 1)
+colnames(N) = c("No lee", "Sí lee")
+N
+```
+
+### Gráficos
+
+```{r}
+x = 2019:2024
+plot(x, N[, 2], type = "o", col = "#2a6f97", pch = 16, ylim = c(0, 100),
+     ylab = "% de personas", xlab = "Año", main = "¿Leyó libros en los últimos doce meses?")
+lines(x, N[, 1], type = "o", col = "#d1495b", pch = 16)
+legend("topright", legend = c("Sí", "No"), col = c("#2a6f97", "#d1495b"), lty = 1, cex = 0.8)
+```
+
+### Interpreta
+
+En la muestra, 41.7% de las personas alfabetas leyó al menos un libro en el último año y 58.3% no leyó ninguno. Esta proporción casi no cambió entre años: fue de 40.6% (2023) a 42.4% (2022).
+
+## 2.4 Variables cualitativas ordinales: escolaridad y libros en casa
+
+### Medidas
+
+```{r}
+frecuencias = function(v) {
+  f = table(v)
+  data.frame(Frecuencia = as.vector(f),
+             Porcentaje = round(100 * as.vector(prop.table(f)), 1),
+             Acumulado = round(100 * cumsum(prop.table(f)), 1),
+             row.names = names(f))
+}
+frecuencias(d$escolaridad)
+frecuencias(d$libros_casa)
+```
+
+### Gráficos
+
+```{r graf-ordinales, fig.width=8, fig.height=3.2}
+par(mfrow = c(1, 2), mar = c(6, 4, 2, 1))
+pe = round(100 * prop.table(table(d$escolaridad)), 1)
+b = barplot(pe, col = "#2a6f97", las = 2, ylim = c(0, 45), main = "Escolaridad",
+            ylab = "% de personas", cex.names = 0.75)
+text(b, pe + 3, paste0(pe, "%"), cex = 0.8)
+pl = round(100 * prop.table(table(d$libros_casa)), 1)
+b = barplot(pl, col = "#2a6f97", las = 2, ylim = c(0, 50), main = "Libros en casa (infancia)",
+            ylab = "% de personas", cex.names = 0.75)
+text(b, pl + 3, paste0(pl, "%"), cex = 0.8)
+```
+
+### Interpreta
+
+En escolaridad, el porcentaje acumulado pasa de 50% en "Media superior", así que esa es la **mediana**. En libros en casa, 40.6% creció en un hogar sin libros (sin contar los de texto) y solo 4.0% tuvo más de 100; la mediana es "1 a 25 libros".
+
+# 3. Vinculación entre variables
+
+## 3.1 ¿Leer o no leer según el acceso?
+
+### Medidas
+
+```{r}
+# Porcentaje de lectores DENTRO de cada valor del índice (el total es cada grupo)
+pct_hogar = round(100 * tapply(d$lee, d$ind_hogar, mean), 1)
+pct_escuela = round(100 * tapply(d$lee, d$ind_escuela, mean), 1)
+rbind(Hogar = pct_hogar, Escuela = pct_escuela)
+round(100 * tapply(d$lee, d$libros_casa, mean), 1)
+```
+
+### Gráficos
+
+```{r}
+par(mfrow = c(1, 2))
+b = barplot(pct_hogar, col = "#2a6f97", ylim = c(0, 80), main = "Acceso en el hogar",
+            xlab = "Número de estímulos", ylab = "% que leyó libros")
+text(b, pct_hogar + 5, paste0(pct_hogar, "%"), cex = 0.8)
+b = barplot(pct_escuela, col = "#2a6f97", ylim = c(0, 80), main = "Acceso en la escuela",
+            xlab = "Número de estímulos", ylab = "% que leyó libros")
+text(b, pct_escuela + 5, paste0(pct_escuela, "%"), cex = 0.8)
+```
+
+### Interpreta
+
+El porcentaje de lectores **sube con cada estímulo**. Sin estímulos en el hogar lee 24.2%; con los cuatro, 66.1%, una diferencia de 41.9 puntos. En la escuela el patrón es el mismo pero más suave: de 27.3% a 50.4%. Con los libros en casa la diferencia es todavía mayor: de 26.4% (ninguno) a 76.7% (más de 100).
+
+## 3.2 Acceso y escolaridad
+
+### Medidas
+
+```{r}
+round(100 * tapply(d$lee, d$escolaridad, mean), 1)
+# Porcentaje de lectores por escolaridad y acceso en el hogar
+tab_esc = round(100 * tapply(d$lee, list(d$acceso_hogar, d$escolaridad), mean), 1)
+tab_esc
+# ¿Cómo se reparte el acceso en cada nivel de escolaridad? (porcentaje por columna)
+round(100 * prop.table(table(d$acceso_hogar, d$escolaridad), 2), 1)
+```
+
+### Gráficos
+
+```{r}
+colores = c("#d1495b", "#edae49", "#00798c")
+par(mar = c(4, 4, 2, 9), xpd = TRUE)
+b = barplot(tab_esc, beside = TRUE, col = colores, ylim = c(0, 90),
+            ylab = "% que leyó libros", xlab = "Escolaridad")
+text(b, tab_esc + 4, round(tab_esc), cex = 0.75)
+legend("topright", inset = c(-0.25, 0), legend = rownames(tab_esc), fill = colores,
+       title = "Acceso en el hogar", bty = "n", cex = 0.8)
+```
+
+### Interpreta
+
+La escolaridad también se relaciona con leer (de 24.7% a 64.5%), y además va de la mano con el acceso: 76.8% de quienes tienen primaria o menos tuvo acceso bajo en casa, contra 26.6% de quienes tienen estudios superiores. Al comparar **dentro del mismo nivel de escolaridad**, quienes tuvieron acceso alto leen entre 19 y 24 puntos más que quienes tuvieron acceso bajo. Por ejemplo, las personas con primaria o menos y acceso alto (40.9%) leen más que las de media superior con acceso bajo (28.8%).
+
+## 3.3 ¿La escuela compensa al hogar?
+
+```{r}
+round(100 * tapply(d$lee, list(d$acceso_hogar, d$acceso_escuela), mean), 1)
+table(d$acceso_hogar, d$acceso_escuela)
+# ¿Quien tuvo acceso en casa también lo tuvo en la escuela? (porcentaje por renglón)
+round(100 * prop.table(table(d$acceso_hogar, d$acceso_escuela), 1), 1)
+```
+
+### Interpreta
+
+Un acceso alto en la escuela se relaciona con más lectores sobre todo cuando el acceso en casa fue bajo (de 24.8% a 32.6%), pero no cierra la brecha con quienes tuvieron acceso alto en casa (60.5%). Además, los dos accesos van juntos: 82.7% de quienes tuvieron acceso alto en casa también lo tuvieron en la escuela, contra 42.1% de quienes tuvieron acceso bajo.
+
+## 3.4 ¿Cuántos libros leen según el acceso?
+
+### Medidas
+
+```{r}
+media = tapply(lect$libros, lect$acceso_hogar, mean)
+mediana = tapply(lect$libros, lect$acceso_hogar, median)
+desviacion = tapply(lect$libros, lect$acceso_hogar, sd)
+rangoI = tapply(lect$libros, lect$acceso_hogar, IQR)
+n = tapply(lect$libros, lect$acceso_hogar, length)
+Medidas = data.frame(n, media, mediana, desviacion, rangoI)
+round(Medidas, 2)
+
+# Lo mismo según los libros en casa
+round(data.frame(n = tapply(lect$libros, lect$libros_casa, length),
+                 media = tapply(lect$libros, lect$libros_casa, mean),
+                 mediana = tapply(lect$libros, lect$libros_casa, median),
+                 desviacion = tapply(lect$libros, lect$libros_casa, sd)), 2)
+
+# Porcentaje de lectores que leyó más de 5 libros
+round(100 * tapply(lect$libros > 5, lect$acceso_hogar, mean), 1)
+# Lectores con más de 30 libros (no se ven en la gráfica)
+sum(lect$libros > 30)
+```
+
+### Gráficos
+
+```{r}
+par(mfrow = c(1, 2), mar = c(4, 7, 2, 1))
+boxplot(libros ~ acceso_hogar, data = lect, horizontal = TRUE, col = colores, ylim = c(0, 30),
+        las = 1, main = "Acceso en el hogar", xlab = "Libros leídos", ylab = "", cex.axis = 0.75)
+points(tapply(lect$libros, lect$acceso_hogar, mean), 1:3, pch = 18, cex = 1.4)
+boxplot(libros ~ libros_casa, data = lect, horizontal = TRUE, col = "#2a6f97", ylim = c(0, 30),
+        las = 1, main = "Libros en casa", xlab = "Libros leídos", ylab = "", cex.axis = 0.75)
+points(tapply(lect$libros, lect$libros_casa, mean), 1:6, pch = 18, cex = 1.4)
+```
+
+### Interpreta
+
+Entre quienes sí leen, la diferencia por acceso es **más pequeña** que en la decisión de leer. La mediana pasa de 2 libros (acceso bajo y medio) a 3 (acceso alto) y la media de 3.07 a 3.85. El ancho de la caja (RIC = 2) es igual en los tres grupos. Con los libros en casa la diferencia es más clara: la mediana va de 2 (ninguno) a 4 (más de 100) y la media de 2.89 a 7.29, aunque ese último grupo también es el más disperso (desviación estándar de 10.72). Las gráficas se cortan en 30 libros para que se vean las cajas; 34 lectores (0.7%) leyeron más.
+
+## 3.5 Dos cuantitativas: edad y libros leídos
+
+```{r}
+plot(lect$edad, lect$libros, col = "#2a6f97", pch = 21, ylim = c(0, 100),
+     xlab = "Edad (años)", ylab = "Libros leídos", main = "Edad y libros leídos (lectores)")
+cor(lect$edad, lect$libros)   # coeficiente de correlación lineal
+# Acceso y lectura por grupo de edad
+round(rbind(`Índice hogar` = tapply(d$ind_hogar, d$grupo_edad, mean, na.rm = TRUE),
+            `Índice escuela` = tapply(d$ind_escuela, d$grupo_edad, mean, na.rm = TRUE),
+            `% lectores` = 100 * tapply(d$lee, d$grupo_edad, mean)), 2)
+round(100 * tapply(d$lee, list(d$acceso_hogar, d$grupo_edad), mean), 1)
+```
+
+### Interpreta
+
+No se ve una relación lineal entre la edad y el número de libros (r = −0.06). Sin embargo, los jóvenes tuvieron más acceso (índice del hogar promedio de 2.26 en el grupo de 18 a 29 años, contra 1.22 en el de 60 o más) y leen más (53.4% contra 38.2%). Aun así, la brecha por acceso aparece en todos los grupos de edad.
+
+## 3.6 Evolución a través de los años
+
+### Medidas
+
+```{r}
+pct_anio = round(100 * tapply(d$lee, d$anio, mean), 1)
+pct_anio_acc = round(100 * tapply(d$lee, list(d$acceso_hogar, d$anio), mean), 1)
+rbind(Total = pct_anio, pct_anio_acc)
+# Brecha entre acceso alto y bajo (puntos porcentuales)
+pct_anio_acc["Alto (3-4)", ] - pct_anio_acc["Bajo (0-1)", ]
+# Libros leídos por año (lectores)
+round(rbind(Mediana = tapply(lect$libros, lect$anio, median),
+            Media = tapply(lect$libros, lect$anio, mean)), 2)
+```
+
+### Gráficos
+
+```{r}
+par(mar = c(4, 4, 1, 9), xpd = TRUE)
+anios = 2019:2024
+plot(anios, pct_anio_acc[1, ], type = "o", col = colores[1], pch = 16, lwd = 2, ylim = c(0, 80),
+     xlab = "Año", ylab = "% que leyó libros")
+lines(anios, pct_anio_acc[2, ], type = "o", col = colores[2], pch = 16, lwd = 2)
+lines(anios, pct_anio_acc[3, ], type = "o", col = colores[3], pch = 16, lwd = 2)
+lines(anios, pct_anio, type = "o", col = "black", lty = 2)
+legend("topright", inset = c(-0.27, 0), legend = c(rownames(pct_anio_acc), "Total"),
+       col = c(colores, "black"), lty = c(1, 1, 1, 2), pch = c(16, 16, 16, 1),
+       title = "Acceso en el hogar", bty = "n", cex = 0.8)
+```
+
+### Interpreta
+
+El porcentaje de lectores se mantuvo estable entre 2019 y 2024 y la mediana de libros fue de 2 todos los años. La brecha entre acceso alto y bajo apareció todos los años, entre 27.5 y 35.3 puntos, sin una tendencia clara. Como cada año se entrevista a personas distintas, esto describe a la población de cada levantamiento y no cambios en las mismas personas.
+
+# 4. Conclusiones
+
+Pregunta a): en la muestra, el acceso a la lectura en la infancia se relaciona claramente con leer o no leer: el porcentaje de lectores casi se triplica entre quienes no tuvieron estímulos en casa y quienes tuvieron los cuatro.
+Pregunta b): la relación con cuántos libros se leen es más débil y se nota sobre todo en los lectores intensos.
+Pregunta general: el acceso parece pesar más en volverse lector que en cuánto se lee.
+La brecha aparece con la misma escolaridad, en todas las edades y en todos los años. La escuela compensa solo una parte.
+Pendiente para la Etapa 3: saber si estas diferencias se pueden generalizar a la población con intervalos de confianza y pruebas de hipótesis.

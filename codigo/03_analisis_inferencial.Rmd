@@ -1,0 +1,242 @@
+---
+title: "Etapa 3: Análisis inferencial"
+subtitle: "Desigualdad en el acceso a la lectura en México — MOLEC 2019-2024"
+author: "Fernando Isaac Martínez García, Mateo Rodolfo Flores Torres, Eliel Silva Morales, César Julián Leal Salazar"
+date: "2026-10-14"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+En este documento se hace el análisis inferencial de la pregunta de investigación:
+
+**Pregunta general:** ¿Cómo se relaciona la desigualdad en el acceso a la lectura durante la infancia con los hábitos de lectura de libros en la edad adulta?
+
+* **a)** ¿Cómo se relaciona con la decisión de leer o no leer libros? (variable lee)
+* **b)** ¿Cómo se relaciona con la cantidad de libros leídos? (variable libros)
+
+Todo el análisis usa un **nivel de significancia α = 0.04** (96% de confianza).
+
+# 1. Datos
+
+Usamos la base preparada en la Etapa 2 (`molec_analisis.csv`): 11,685 personas alfabetas.
+
+```{r}
+datos = read.csv("../datos/procesados/molec_analisis.csv")
+dim(datos)
+
+alfa = 0.04
+nc = 1 - alfa          # nivel de confianza: 0.96
+
+niveles = c("Bajo (0-1)", "Medio (2)", "Alto (3-4)")
+# Acceso en el hogar (ya viene de la Etapa 2)
+datos$acceso_hogar = factor(datos$acceso_hogar, levels = niveles)
+# Acceso en la escuela con los mismos tres niveles que el hogar
+datos$acceso_esc3 = cut(datos$ind_escuela, breaks = c(-1, 1, 2, 4), labels = niveles)
+
+# Base solo de lectores (para la cantidad de libros)
+lect = subset(datos, datos$lee == 1)
+```
+
+# 2. Intervalos de confianza
+
+## 2.1 Proporción de lectores por nivel de acceso en el hogar (una población, z)
+
+Supuesto: n·p ≥ 5 y n·(1 − p) ≥ 5 en cada grupo, para aproximar la binomial con la normal.
+
+```{r}
+z = qnorm(1 - alfa/2)     # valor z para 96% de confianza
+z
+
+ic_prop = function(x) {
+  x = x[!is.na(x)]
+  n = length(x); p = mean(x)
+  e = z * sqrt(p * (1 - p) / n)
+  c(n = n, p = p, LI = p - e, LS = p + e, np = n * p, nq = n * (1 - p))
+}
+IC_hogar = t(sapply(niveles, function(k) ic_prop(datos$lee[datos$acceso_hogar == k])))
+round(IC_hogar, 4)
+```
+
+## 2.2 Diferencia de proporciones: escolaridad superior vs primaria o menos (dos poblaciones, z)
+
+```{r}
+ic_dif_prop = function(x1, x2) {
+  x1 = x1[!is.na(x1)]; x2 = x2[!is.na(x2)]
+  p1 = mean(x1); p2 = mean(x2); n1 = length(x1); n2 = length(x2)
+  e = z * sqrt(p1 * (1 - p1) / n1 + p2 * (1 - p2) / n2)
+  c(p1 = p1, p2 = p2, dif = p1 - p2, LI = p1 - p2 - e, LS = p1 - p2 + e)
+}
+IC_esc = ic_dif_prop(datos$lee[datos$escolaridad == "Superior"],
+                     datos$lee[datos$escolaridad == "Primaria o menos"])
+round(IC_esc, 4)
+```
+
+## 2.3 Diferencia de proporciones: escuela alta vs baja entre quienes tuvieron acceso bajo en casa (z)
+
+```{r}
+bajo_casa = subset(datos, datos$acceso_hogar == "Bajo (0-1)")
+IC_comp = ic_dif_prop(bajo_casa$lee[bajo_casa$acceso_escuela == "Alto (3-4)"],
+                      bajo_casa$lee[bajo_casa$acceso_escuela == "Bajo (0-2)"])
+round(IC_comp, 4)
+```
+
+## 2.4 Diferencia de medias de libros: acceso alto vs bajo en el hogar (t, varianzas distintas)
+
+Supuesto: los libros leídos no son normales (sesgo ≈ 7.3), pero cada grupo tiene más de 1,400 lectores, así que por el Teorema del Límite Central la media muestral es aproximadamente normal.
+
+```{r}
+lib_alto = lect$libros[lect$acceso_hogar == "Alto (3-4)" & !is.na(lect$acceso_hogar)]
+lib_bajo = lect$libros[lect$acceso_hogar == "Bajo (0-1)" & !is.na(lect$acceso_hogar)]
+c(n_alto = length(lib_alto), media_alto = mean(lib_alto), sd_alto = sd(lib_alto),
+  n_bajo = length(lib_bajo), media_bajo = mean(lib_bajo), sd_bajo = sd(lib_bajo))
+IC_med = t.test(lib_alto, lib_bajo, var.equal = FALSE, conf.level = nc)$conf.int
+IC_med
+```
+
+## 2.5 Varianza de libros leídos: lectores que tuvieron más de 100 libros en casa (ji-cuadrada)
+
+Este intervalo supone que los datos son normales. Como el número de libros tiene un sesgo muy fuerte, el resultado se interpreta con cautela.
+
+```{r}
+x100 = lect$libros[lect$libros_casa == "Más de 100" & !is.na(lect$libros_casa)]
+n = length(x100); s2 = var(x100)
+IC_var = c((n - 1) * s2 / qchisq(1 - alfa/2, n - 1), (n - 1) * s2 / qchisq(alfa/2, n - 1))
+c(n = n, varianza = s2, LI = IC_var[1], LS = IC_var[2])
+sqrt(IC_var)     # en desviación estándar (libros)
+```
+
+## 2.6 Gráfica de los intervalos de proporción por nivel de acceso
+
+```{r}
+IC_esc3 = t(sapply(niveles, function(k) ic_prop(datos$lee[datos$acceso_esc3 == k])))
+colores = c("#d1495b", "#edae49", "#00798c")
+par(mfrow = c(1, 2), mar = c(4, 7, 2, 1))
+for (g in list(list(IC_hogar, "Acceso en el hogar"), list(IC_esc3, "Acceso en la escuela"))) {
+  M = g[[1]]
+  plot(0, ylim = c(0.5, 3.5), xlim = c(0.2, 0.7), yaxt = "n", ylab = "",
+       xlab = "Proporción de lectores", main = g[[2]])
+  axis(2, at = 1:3, labels = niveles, las = 1, cex.axis = 0.8)
+  arrows(M[, "LI"], 1:3, M[, "LS"], 1:3, angle = 90, code = 3, length = 0.05, lwd = 2, col = colores)
+  points(M[, "p"], 1:3, pch = 19, col = colores)
+  text(M[, "p"], 1:3 + 0.3, sprintf("%.1f%%", 100 * M[, "p"]), cex = 0.75)
+}
+```
+
+# 3. Pruebas de hipótesis
+
+## 3.1 Independencia entre el acceso en el hogar y en la escuela (ji-cuadrada)
+
+H0: el índice del hogar y el índice de la escuela son independientes.
+H1: el índice del hogar y el índice de la escuela no son independientes.
+
+```{r}
+T = table(Hogar = datos$ind_hogar, Escuela = datos$ind_escuela)
+addmargins(T)
+chi = chisq.test(T)
+min(chi$expected)                       # supuesto: todas las esperadas >= 5
+gl = (nrow(T) - 1) * (ncol(T) - 1)
+chi_f = qchisq(1 - alfa, gl)            # valor frontera
+c(chi2 = unname(chi$statistic), gl = gl, frontera = chi_f, p = chi$p.value)
+```
+
+## 3.2 Proporción de lectores: estímulos solo en casa vs solo en la escuela (z, dos colas)
+
+H0: p_casa = p_escuela.   H1: p_casa ≠ p_escuela.
+
+```{r}
+solo_casa = subset(datos, datos$ind_hogar > 0 & datos$ind_escuela == 0)
+solo_esc  = subset(datos, datos$ind_hogar == 0 & datos$ind_escuela > 0)
+x = c(sum(solo_casa$lee), sum(solo_esc$lee)); n = c(nrow(solo_casa), nrow(solo_esc))
+rbind(Lectores = x, Total = n, Proporcion = round(x / n, 4))
+
+pc = sum(x) / sum(n)                                    # proporción combinada
+ze_ce = (x[1]/n[1] - x[2]/n[2]) / sqrt(pc * (1 - pc) * (1/n[1] + 1/n[2]))
+zf_ce = qnorm(1 - alfa/2)
+c(z = ze_ce, frontera = zf_ce, p = 2 * pnorm(-abs(ze_ce)))
+prop.test(x, n, conf.level = nc, correct = FALSE)      # mismo resultado (X-squared = z^2) e IC
+```
+
+## 3.3 Diferencias de proporción entre niveles de acceso (z, dos colas)
+
+H0: p2 − p1 = 0.   H1: p2 − p1 ≠ 0, para Bajo–Medio, Medio–Alto y Bajo–Alto, en cada índice.
+
+```{r}
+prueba_z = function(x1, x2) {
+  x1 = x1[!is.na(x1)]; x2 = x2[!is.na(x2)]
+  p1 = mean(x1); p2 = mean(x2); n1 = length(x1); n2 = length(x2)
+  pc = (sum(x1) + sum(x2)) / (n1 + n2)
+  se = sqrt(pc * (1 - pc) * (1/n1 + 1/n2))
+  c(p1 = p1, p2 = p2, dif = p2 - p1, frontera = qnorm(1 - alfa/2) * se,
+    z = (p2 - p1) / se, p = 2 * pnorm(-abs((p2 - p1) / se)))
+}
+pares = list(c(1, 2), c(2, 3), c(1, 3))
+comparar = function(acc) t(sapply(pares, function(pr)
+  prueba_z(datos$lee[acc == niveles[pr[1]]], datos$lee[acc == niveles[pr[2]]])))
+Z_hogar = comparar(datos$acceso_hogar)
+Z_esc   = comparar(datos$acceso_esc3)
+rownames(Z_hogar) = rownames(Z_esc) = c("Bajo-Medio", "Medio-Alto", "Bajo-Alto")
+round(Z_hogar, 4)
+round(Z_esc, 4)
+```
+
+## 3.4 Media de libros leídos: acceso alto vs bajo en el hogar (t, una cola)
+
+H0: μ_alto = μ_bajo.   H1: μ_alto > μ_bajo.
+
+```{r}
+prueba_t = t.test(lib_alto, lib_bajo, alternative = "greater", var.equal = FALSE, conf.level = nc)
+tf = qt(1 - alfa, prueba_t$parameter)          # valor frontera (una cola)
+c(t = unname(prueba_t$statistic), gl = unname(prueba_t$parameter), frontera = tf,
+  p = prueba_t$p.value)
+```
+
+## 3.5 Gráficas de las pruebas
+
+```{r}
+par(mfrow = c(1, 3), mar = c(4, 1, 2.5, 1))
+# (a) Ji-cuadrada con 16 gl, eje en escala logarítmica para que quepa el estadístico
+xc = exp(seq(log(1), log(4000), length = 400))
+plot(xc, dchisq(xc, gl), type = "l", lwd = 3, log = "x", yaxt = "n", ylab = "",
+     xlab = "Ji-cuadrada (escala log)", main = "Independencia hogar-escuela")
+abline(h = 0)
+abline(v = chi_f, col = "red", lty = 3, lwd = 1.5); text(chi_f, 0.06, round(chi_f, 2), col = "red", cex = 0.8, pos = 4)
+abline(v = chi$statistic, col = "blue", lty = 3, lwd = 1.5); text(chi$statistic, 0.06, round(chi$statistic, 1), col = "blue", cex = 0.8, pos = 2)
+# (b) z de dos colas, solo casa vs solo escuela
+xz = seq(-10, 10, 0.05)
+plot(xz, dnorm(xz), type = "l", lwd = 3, yaxt = "n", ylab = "", xlab = "z",
+     main = "Solo casa vs solo escuela")
+abline(h = 0)
+abline(v = c(-zf_ce, zf_ce), col = "red", lty = 3, lwd = 1.5)
+text(-zf_ce, 0.38, round(-zf_ce, 2), col = "red", cex = 0.8, pos = 2)
+text(zf_ce, 0.38, round(zf_ce, 2), col = "red", cex = 0.8, pos = 4)
+abline(v = ze_ce, col = "blue", lty = 3, lwd = 1.5); text(ze_ce, 0.2, round(ze_ce, 2), col = "blue", cex = 0.8, pos = 2)
+# (c) t de una cola, medias de libros
+xt = seq(-6, 6, 0.05)
+plot(xt, dt(xt, prueba_t$parameter), type = "l", lwd = 3, yaxt = "n", ylab = "", xlab = "t",
+     main = "Libros: acceso alto vs bajo")
+abline(h = 0)
+abline(v = tf, col = "red", lty = 3, lwd = 1.5); text(tf, 0.38, round(tf, 2), col = "red", cex = 0.8, pos = 4)
+abline(v = prueba_t$statistic, col = "blue", lty = 3, lwd = 1.5)
+text(prueba_t$statistic, 0.2, round(prueba_t$statistic, 2), col = "blue", cex = 0.8, pos = 2)
+legend("topleft", c("Valor frontera", "Estadístico"), col = c("red", "blue"), lty = 3, cex = 0.7, bty = "n")
+```
+
+```{r}
+par(mfrow = c(1, 2), mar = c(4, 7, 2, 1))
+for (g in list(list(Z_hogar, "Índice del hogar"), list(Z_esc, "Índice de la escuela"))) {
+  M = g[[1]]
+  plot(0, ylim = c(0.5, 3.5), xlim = c(-0.05, 0.35), yaxt = "n", ylab = "",
+       xlab = "Diferencia de proporciones", main = g[[2]])
+  axis(2, at = 1:3, labels = rownames(M), las = 1, cex.axis = 0.8)
+  abline(v = 0, col = "gray")
+  arrows(-M[, "frontera"], 1:3, M[, "frontera"], 1:3, angle = 90, code = 3, length = 0.04,
+         lwd = 2, col = "red")
+  points(M[, "dif"], 1:3, pch = 19, col = "blue")
+  text(M[, "dif"], 1:3 + 0.3, sprintf("%.3f", M[, "dif"]), cex = 0.75, col = "blue")
+}
+```
+
+La banda roja es la zona de no rechazo (±valor frontera). Si el punto azul queda fuera de la banda, se rechaza H0.

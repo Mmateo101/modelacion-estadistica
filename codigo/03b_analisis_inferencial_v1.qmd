@@ -1,0 +1,396 @@
+---
+title: "Etapa 3: Análisis Inferencial"
+subtitle: "Desigualdad en el acceso a la lectura en México — MOLEC 2019-2024"
+format:
+  html:
+    toc: true
+    df-print: paged
+execute:
+  warning: false
+  message: false
+---
+
+# 1. Datos
+
+```{r}
+datos = read.csv("../datos/procesados/molec_analisis.csv")
+datos = datos[!is.na(datos$acceso_hogar) & !is.na(datos$lee), ]
+d = read.csv("../datos/procesados/molec_analisis.csv")   # base completa para las pruebas de hipótesis de los índices
+alpha = 0.04
+alfa = alpha
+z = qnorm(1 - alpha / 2)
+```
+
+# 2. Análisis
+
+## Intervalos de Confianza
+
+### Intervalo de Confianza de acceso bajo a recursos de lectura en el hogar
+
+```{r}
+x_bajo = sum(datos$lee[datos$acceso_hogar == "Bajo (0-1)"] == 1)
+n_bajo = length(datos$lee[datos$acceso_hogar == "Bajo (0-1)"])
+p_bajo = x_bajo / n_bajo
+
+error_bajo = z * sqrt((p_bajo * (1 - p_bajo)) / n_bajo)
+ICinf_bajo = p_bajo - error_bajo
+ICsup_bajo = p_bajo + error_bajo
+
+cat("Los límites para Acceso Bajo son", ICinf_bajo, "y", ICsup_bajo, "\n")
+```
+
+### Intervalo de Confianza de acceso medio a recursos de lectura en el hogar
+
+```{r}
+x_medio = sum(datos$lee[datos$acceso_hogar == "Medio (2)"] == 1)
+n_medio = length(datos$lee[datos$acceso_hogar == "Medio (2)"])
+p_medio = x_medio / n_medio
+
+error_medio = z * sqrt((p_medio * (1 - p_medio)) / n_medio)
+ICinf_medio = p_medio - error_medio
+ICsup_medio = p_medio + error_medio
+
+cat("Los límites para Acceso Medio son", ICinf_medio, "y", ICsup_medio, "\n")
+```
+
+### Intervalo de Confianza de acceso alto a recursos de lectura en el hogar
+
+```{r}
+x_alto = sum(datos$lee[datos$acceso_hogar == "Alto (3-4)"] == 1)
+n_alto = length(datos$lee[datos$acceso_hogar == "Alto (3-4)"])
+p_alto = x_alto / n_alto
+
+error_alto = z * sqrt((p_alto * (1 - p_alto)) / n_alto)
+ICinf_alto = p_alto - error_alto
+ICsup_alto = p_alto + error_alto
+
+cat("Los límites para Acceso Alto son", ICinf_alto, "y", ICsup_alto, "\n")
+```
+
+```{r}
+plot(0, ylim = c(0, 3 + 1), xlim = c(0.2, 0.7), yaxt = "n", ylab = "", xlab = "Proporción de Lectores",
+     main = "Intervalo de proporción según el acceso en el hogar")
+axis(2, at = c(1, 2, 3), labels = c("Bajo", "Medio", "Alto"))
+
+arrows(ICinf_bajo, 1, ICsup_bajo, 1, angle = 90, code = 3, length = 0.1, lwd = 2, col = "purple")
+arrows(ICinf_medio, 2, ICsup_medio, 2, angle = 90, code = 3, length = 0.1, lwd = 2, col = "darkblue")
+arrows(ICinf_alto, 3, ICsup_alto, 3, angle = 90, code = 3, length = 0.1, lwd = 2, col = "darkgreen")
+```
+
+Figura 1: Comparación de Intervalos de proporción según el acceso en el hogar.
+
+### Intervalo de confianza de diferencia de dos proporciones de adultos lectores que tienen educación "Superior" contra los que tienen "Primaria o menos"
+
+```{r}
+datos_sup = subset(datos, escolaridad == "Superior")
+datos_pri = subset(datos, escolaridad == "Primaria o menos")
+
+n_sup = nrow(datos_sup)
+n_pri = nrow(datos_pri)
+
+p_sup = sum(datos_sup$lee == 1) / n_sup
+p_pri = sum(datos_pri$lee == 1) / n_pri
+
+error = z * sqrt((p_sup * (1 - p_sup) / n_sup) + (p_pri * (1 - p_pri) / n_pri))
+
+dif_prop = p_sup - p_pri
+liminf = dif_prop - error
+limsup = dif_prop + error
+
+cat("La diferencia de proporciones (Superior - Primaria) es de", dif_prop, "\n")
+cat("Los límites son", liminf, "y", limsup, "con una confianza del 96%\n")
+```
+
+```{r}
+margen = (limsup - liminf) * 0.5
+plot(0, ylim = c(0, 2), xlim = c(liminf - margen, limsup + margen),
+     yaxt = "n", ylab = "", xlab = "Diferencia de proporciones",
+     main = "IC Diferencia de lectores (Superior vs Primaria)")
+axis(2, at = c(1), labels = c("Diferencia"))
+arrows(liminf, 1, limsup, 1, angle = 90, code = 3, length = 0.1, lwd = 2, col = "darkgreen")
+```
+
+Figura 2: Intervalo de Confianza de Diferencia de lectores con grado superior contra primaria o menos.
+
+### Intervalo de Confianza para la varianza en la cantidad de libros leídos, evaluando únicamente al grupo que tuvo "Más de 100 libros" en casa durante la infancia
+
+```{r}
+libros100 = subset(datos, libros_casa == "Más de 100" & lee == 1)$libros
+
+n = length(libros100)
+var = var(libros100)
+
+chi2inf = qchisq(alpha / 2, n - 1)
+chi2sup = qchisq(1 - alpha / 2, n - 1)
+
+liminf = ((n - 1) * var) / chi2sup
+limsup = ((n - 1) * var) / chi2inf
+
+cat("La varianza muestral es", var, "\n")
+cat("Los límites de la varianza son", liminf, "y", limsup, "con una confianza del 96%\n")
+
+desvestvar = sqrt(var)
+desvestinf = sqrt(liminf)
+desvestsup = sqrt(limsup)
+
+cat("La desviación estándar muestral es", desvestvar, "\n")
+cat("Los límites de la desviación estándar son", desvestinf, "y", desvestsup, "con una confianza del 96%\n")
+```
+
+```{r}
+margen = (limsup - liminf) * 0.5
+plot(0, ylim = c(0, 2), xlim = c(liminf - margen, limsup + margen),
+     yaxt = "n", ylab = "", xlab = "Varianza",
+     main = "IC Varianza de libros leídos (Más de 100 en casa)")
+axis(2, at = c(1), labels = c("Varianza"))
+arrows(liminf, 1, limsup, 1, angle = 90, code = 3, length = 0.1, lwd = 2, col = "purple")
+abline(v = var, col = "red", lty = 1)
+```
+
+Figura 3: Intervalo de confianza de la varianza de libros leídos en México (solo de los que tuvieron más de 100 libros en sus casas).
+
+```{r}
+margen = (desvestsup - desvestinf) * 0.5
+plot(0, ylim = c(0, 2), xlim = c(desvestinf - margen, desvestsup + margen),
+     yaxt = "n", ylab = "", xlab = "Desviación Estandar",
+     main = "IC Desviación Estandar de libros leídos (Más de 100 en casa)")
+axis(2, at = c(1), labels = c("Desviación Estandar"))
+arrows(desvestinf, 1, desvestsup, 1, angle = 90, code = 3, length = 0.1, lwd = 2, col = "purple")
+abline(v = desvestvar, col = "red", lty = 1)
+```
+
+Figura 4: Intervalo de confianza de la desviación estándar de libros leídos en México (solo de los que tuvieron más de 100 libros en sus casas).
+
+### Intervalo de confianza de la diferencia de proporción de personas que tuvieron un alto acceso a recursos de lectura en la escuela vs un bajo acceso, y que en ambos casos tenían un bajo acceso en el hogar
+
+```{r}
+datos_esc_alta = subset(datos, ind_hogar <= 1 & ind_escuela >= 3)
+datos_esc_baja = subset(datos, ind_hogar <= 1 & ind_escuela <= 2)
+
+n_ea = nrow(datos_esc_alta)
+n_eb = nrow(datos_esc_baja)
+
+p_ea = sum(datos_esc_alta$lee == 1) / n_ea
+p_eb = sum(datos_esc_baja$lee == 1) / n_eb
+
+error = z * sqrt((p_ea * (1 - p_ea) / n_ea) + (p_eb * (1 - p_eb) / n_eb))
+
+dif_prop = p_ea - p_eb
+liminf = dif_prop - error
+limsup = dif_prop + error
+
+cat("La diferencia de proporciones (Escuela Alta - Escuela Baja) es", dif_prop, "\n")
+cat("Los límites son", liminf, "y", limsup, "con una confianza del 96%\n")
+```
+
+```{r}
+margen = (limsup - liminf) * 0.5
+plot(0, ylim = c(0, 2), xlim = c(liminf - margen, limsup + margen), yaxt = "n", ylab = "",
+     xlab = "Diferencia de proporciones", main = "IC Diferencia de lectores (Escuela Alta vs Baja)")
+axis(2, at = c(1), labels = c("Diferencia"))
+arrows(liminf, 1, limsup, 1, angle = 90, code = 3, length = 0.1, lwd = 2, col = "blue")
+```
+
+### Intervalo de confianza para la diferencia de medias de libros leídos comparando a los lectores que tuvieron acceso Alto en el hogar vs los que tuvieron acceso Bajo
+
+```{r}
+libros_alto = subset(datos, ind_hogar >= 3 & lee == 1)$libros
+libros_bajo = subset(datos, ind_hogar <= 1 & lee == 1)$libros
+
+n_alto = length(libros_alto)
+n_bajo = length(libros_bajo)
+
+media_a = mean(libros_alto)
+media_b = mean(libros_bajo)
+
+var_a = var(libros_alto)
+var_b = var(libros_bajo)
+
+# Grados de libertad de Welch (varianzas distintas)
+df_gl = (var_a / n_alto + var_b / n_bajo)^2 / ((var_a / n_alto)^2 / (n_alto - 1) + (var_b / n_bajo)^2 / (n_bajo - 1))
+
+t_val = qt(1 - alpha / 2, df = df_gl)
+
+error = t_val * sqrt(var_a / n_alto + var_b / n_bajo)
+dif_medias = media_a - media_b
+
+liminf = dif_medias - error
+limsup = dif_medias + error
+
+cat("La diferencia de medias de libros (Alto - Bajo) es", dif_medias, "\n")
+cat("Los límites son", liminf, "y", limsup, "con una confianza del 96%\n")
+```
+
+```{r}
+margen = (limsup - liminf) * 0.5
+plot(0, ylim = c(0, 2), xlim = c(liminf - margen, limsup + margen),
+     yaxt = "n", ylab = "", xlab = "Diferencia de medias de libros leidos",
+     main = "IC Diferencia cantidad de libros leidos en Hogar con \n Altos accesos vs Bajos accesos")
+axis(2, at = c(1), labels = c("Diferencia"))
+arrows(liminf, 1, limsup, 1, angle = 90, code = 3, length = 0.1, lwd = 2, col = "darkorange")
+```
+
+## Prueba de Hipótesis
+
+### Prueba de Homogeneidad
+
+$$H_0: \text{El índice del hogar y el índice de la escuela son independientes}$$
+
+$$H_1: \text{El índice del hogar y el índice de la escuela son dependientes}$$
+
+$$E_{ij} = \frac{(\text{total de la fila } i)(\text{total de la columna } j)}{n}$$
+
+$$\chi^2 = \sum_{i=0}^{4}\sum_{j=0}^{4}\frac{(O_{ij}-E_{ij})^2}{E_{ij}}, \qquad gl = (\text{filas}-1)(\text{columnas}-1)$$
+
+```{r}
+# Frecuencias observadas (filas = hogar, columnas = escuela) y esperadas bajo independencia
+observadas = table(Hogar = d$ind_hogar, Escuela = d$ind_escuela)
+n = sum(observadas)
+esperadas = outer(rowSums(observadas), colSums(observadas)) / n
+dimnames(esperadas) = dimnames(observadas)
+```
+
+```{r}
+knitr::kable(addmargins(observadas))
+```
+
+Tabla 1: Frecuencias observadas de los índices de estímulos en el hogar (filas) y en la escuela (columnas).
+
+```{r}
+chi2 = sum((observadas - esperadas)^2 / esperadas)
+gl = (nrow(observadas) - 1) * (ncol(observadas) - 1)
+chi2_crit = qchisq(1 - alfa, gl)   # valor frontera
+valor_p = 1 - pchisq(chi2, gl)
+
+data.frame(Chi2 = chi2, gl = gl, Valor_frontera = chi2_crit, Valor_p = valor_p,
+           Decision = ifelse(chi2 > chi2_crit, "Rechaza H0", "No rechaza H0"))
+```
+
+#### Gráfica de la distribución
+
+```{r}
+# Densidad respecto a log(chi2) para poder mostrar el estadístico observado en el eje
+x = exp(seq(log(0.5), log(5000), length.out = 800))
+y = x * dchisq(x, gl)
+
+plot(x, y, type = "l", log = "x", lwd = 2, col = "#2a6f97", xaxt = "n",
+     xlab = expression(chi^2 ~ "(escala logarítmica)"), ylab = "Densidad", ylim = c(0, 1.2 * max(y)))
+axis(1, at = c(1, 10, 100, 1000), labels = c("1", "10", "100", "1000"))
+
+x_rech = x[x >= chi2_crit]
+polygon(c(chi2_crit, x_rech, max(x)), c(0, x_rech * dchisq(x_rech, gl), 0),
+        col = adjustcolor("#d1495b", alpha.f = 0.4), border = NA)
+
+abline(v = chi2_crit, lty = 2, lwd = 2)
+abline(v = chi2, lwd = 2, col = "#d1495b")
+text(chi2_crit, 1.12 * max(y), paste0("Valor frontera = ", round(chi2_crit, 2)), pos = 2)
+text(chi2, 1.12 * max(y), paste0("Observada = ", round(chi2, 2)), pos = 2, col = "#d1495b")
+```
+
+Gráfica 1: Distribución χ² con 16 grados de libertad (escala logarítmica), valor frontera y estadístico observado.
+
+### Diferencia de Proporciones
+
+```{r}
+# Muestras mutuamente excluyentes: estímulos solo en la escuela vs solo en el hogar
+datos = read.csv("../datos/procesados/molec_analisis.csv")
+p_esc = datos[which(datos$ind_hogar == 0 & datos$ind_escuela > 0), ]
+p_hog = datos[which(datos$ind_escuela == 0 & datos$ind_hogar > 0), ]
+ex_esc = sum(p_esc$lee == 1)
+ex_hog = sum(p_hog$lee == 1)
+p = c(ex_esc, ex_hog)
+n = c(nrow(p_esc), nrow(p_hog))
+res = prop.test(p, n, conf.level = 0.96)
+res
+```
+
+```{r}
+ci_esc = prop.test(ex_esc, n[1], conf.level = 0.96)$conf.int
+ci_hog = prop.test(ex_hog, n[2], conf.level = 0.96)$conf.int
+props = res$estimate
+names(props) = c("Escuela", "Hogar")
+bp = barplot(props, ylim = c(0, 1), col = c("skyblue", "orange"),
+             main = "Proporción de lectura por grupo (IC 96%)", ylab = "Proporción")
+arrows(bp, c(ci_esc[1], ci_hog[1]), bp, c(ci_esc[2], ci_hog[2]), angle = 90, code = 3, length = 0.1, lwd = 2)
+```
+
+### Prueba de Calidad de los Índices
+
+$$H_0: p_M - p_B = 0 \qquad H_1: p_M - p_B \neq 0$$
+
+$$H_0: p_A - p_M = 0 \qquad H_1: p_A - p_M \neq 0$$
+
+$$H_0: p_A - p_B = 0 \qquad H_1: p_A - p_B \neq 0$$
+
+$$z = \frac{p_2 - p_1}{\sqrt{\hat{p}(1-\hat{p})\left(\frac{1}{n_1}+\frac{1}{n_2}\right)}}$$
+
+```{r}
+z_crit = qnorm(1 - alfa / 2)   # valor crítico bilateral
+
+# Agrupa un índice 0-4 en Bajo (0-1), Medio (2) y Alto (3-4)
+agrupar = function(x) cut(x, c(-1, 1, 2, 4), labels = c("Bajo", "Medio", "Alto"))
+
+# Prueba z de diferencia de proporciones de lectores para los tres pares de grupos de un índice
+pruebas_indice = function(indice, nombre) {
+  lee = d$lee[!is.na(d$lee)]
+  grupo = agrupar(d[[indice]][!is.na(d$lee)])
+  n_g = tapply(lee, grupo, length)
+  x_g = tapply(lee, grupo, sum)
+  p_g = x_g / n_g
+  pares = list(c("Bajo", "Medio"), c("Medio", "Alto"), c("Bajo", "Alto"))
+  do.call(rbind, lapply(pares, function(par) {
+    a = par[1]; b = par[2]
+    p_comb = (x_g[a] + x_g[b]) / (n_g[a] + n_g[b])
+    ee = sqrt(p_comb * (1 - p_comb) * (1 / n_g[a] + 1 / n_g[b]))
+    z = (p_g[b] - p_g[a]) / ee
+    data.frame(Indice = nombre, Comparacion = paste(a, "-", b), p1 = p_g[a], p2 = p_g[b],
+               Diferencia = p_g[b] - p_g[a], Frontera = z_crit * ee, z = z,
+               Decision = ifelse(abs(z) > z_crit, "Rechaza H0", "No rechaza H0"), row.names = NULL)
+  }))
+}
+
+hogar = pruebas_indice("ind_hogar", "Hogar")
+escuela = pruebas_indice("ind_escuela", "Escuela")
+resultados = rbind(hogar, escuela)
+```
+
+```{r}
+knitr::kable(resultados, digits = c(0, 0, 4, 4, 4, 4, 2, 0))
+```
+
+Tabla 2: Pruebas z de diferencia de proporciones, índices del hogar y de la escuela.
+
+#### Gráficas de diferencias de proporciones
+
+```{r}
+# Diferencia observada (punto) contra la banda de no rechazo ±z_crit·EE de cada comparación
+graficar_diferencias = function(r, titulo) {
+  x = 1:3
+  plot(NA, xlim = c(0.5, 3.95), ylim = c(-0.08, 0.36), xaxt = "n", xlab = "",
+       ylab = "Diferencia de proporciones", main = titulo)
+  axis(1, x, r$Comparacion)
+  for (i in x) {
+    rect(i - 0.35, -r$Frontera[i], i + 0.35, r$Frontera[i], col = "grey85", border = NA)
+    segments(i - 0.35, c(-1, 1) * r$Frontera[i], i + 0.35, c(-1, 1) * r$Frontera[i], lty = 2, lwd = 1.5, col = "red3")
+    text(i + 0.36, r$Frontera[i], sprintf("+%.3f", r$Frontera[i]), pos = 4, cex = 0.6, col = "red3", xpd = NA)
+    text(i + 0.36, -r$Frontera[i], sprintf("-%.3f", r$Frontera[i]), pos = 4, cex = 0.6, col = "red3", xpd = NA)
+  }
+  abline(h = 0, col = "grey40")
+  points(x, r$Diferencia, pch = 19, cex = 1.8, col = "steelblue4")
+  text(x - 0.07, r$Diferencia, sprintf("%.3f", r$Diferencia), pos = 2, cex = 0.75, font = 2)
+  legend("topleft", c("Diferencia observada", paste0("Valor frontera (±", round(z_crit, 3), "·EE)")),
+         pch = c(19, NA), lty = c(NA, 2), col = c("steelblue4", "red3"), bty = "n", cex = 0.7)
+}
+```
+
+```{r}
+graficar_diferencias(hogar, "Índice de estímulos en el hogar")
+```
+
+Gráfica 2: Diferencias de proporciones y valores frontera, índice del hogar.
+
+```{r}
+graficar_diferencias(escuela, "Índice de estímulos en la escuela")
+```
+
+Gráfica 3: Diferencias de proporciones y valores frontera, índice de la escuela.

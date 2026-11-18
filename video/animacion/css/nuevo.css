@@ -1,0 +1,58 @@
+/* Video v3: teatro de papel. Se carga encima de fonts.css. */
+:root {
+  --f-head: "Fraunces", Georgia, serif;
+  --f-body: "Nunito", "Segoe UI", sans-serif;
+  --f-hand: "Caveat", cursive;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #05071a; font-family: var(--f-body); }
+#viewport { position: fixed; inset: 0; overflow: hidden; background: #05071a; }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: #0B1030; }
+#mundo { position: absolute; inset: 0; perspective: 2600px; perspective-origin: 50% 50%; }
+.escena { position: absolute; inset: 0; visibility: hidden; }
+.plano { position: absolute; inset: 0; overflow: hidden; perspective: 1500px; perspective-origin: 50% 50%; visibility: hidden; backface-visibility: hidden; }
+.cam { position: absolute; inset: 0; transform-style: preserve-3d; }
+.capa, .capa-luz { position: absolute; left: -480px; top: -270px; width: 2880px; height: 1620px; transform-origin: 1440px 810px; overflow: visible; pointer-events: none; }
+.luces { position: absolute; inset: 0; mix-blend-mode: screen; pointer-events: none; }
+.halo { position: absolute; border-radius: 50%; }
+.hud { position: absolute; inset: 0; pointer-events: none; }
+.abs { position: absolute; }
+svg { overflow: visible; }
+
+/* textura de papel y viñeta sobre todo el cuadro */
+#grano { position: absolute; inset: 0; z-index: 900; pointer-events: none; mix-blend-mode: overlay; opacity: .5; background-size: 256px 256px; }
+#vineta { position: absolute; inset: 0; z-index: 901; pointer-events: none; background: radial-gradient(ellipse at 50% 46%, rgba(0,0,0,0) 55%, rgba(4,6,24,.5) 100%); }
+
+/* tipografía */
+.t-head { font-family: var(--f-head); font-weight: 600; line-height: 1.1; }
+.t-body { font-family: var(--f-body); font-weight: 700; line-height: 1.25; }
+.t-hand { font-family: var(--f-hand); font-weight: 700; line-height: 1.05; }
+.num { font-variant-numeric: tabular-nums; }
+.word { display: inline-block; white-space: nowrap; }
+.ch { display: inline-block; position: relative; white-space: pre; }
+.etq { position: absolute; padding: 8px 20px 10px; border-radius: 10px; background: rgba(11,16,48,.78); color: #FFF8E8; font: 700 28px/1.2 var(--f-body); }
+
+/* subtítulos y guía */
+#sub { position: absolute; left: 0; right: 0; bottom: 22px; z-index: 950; text-align: center; pointer-events: none; display: none; }
+#sub.on { display: block; }
+#sub .txt { display: inline-block; max-width: 1560px; padding: 9px 26px 11px; border-radius: 14px; background: rgba(8,10,30,.86); color: #fffdf8; font: 700 33px/1.22 var(--f-body); }
+#sub .who { display: none; margin-right: 12px; vertical-align: middle; padding: 5px 12px; border-radius: 8px; background: #7A4E8C; color: #fff; font: 800 18px/1 var(--f-body); letter-spacing: .08em; text-transform: uppercase; }
+body.guia #sub .who { display: inline-block; }
+#reloj { position: absolute; right: 22px; top: 16px; z-index: 950; display: none; font: 800 20px/1 var(--f-body); color: #fffdf8; background: rgba(8,10,30,.78); padding: 8px 14px; border-radius: 10px; font-variant-numeric: tabular-nums; }
+body.guia #reloj { display: block; }
+#barra { position: fixed; left: 0; right: 0; bottom: 0; height: 10px; background: rgba(255,255,255,.18); z-index: 9999; cursor: pointer; }
+#barra .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: #FFC56B; }
+#barra .marks i { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,.7); }
+body.render #barra { display: none; }
+#loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 28px var(--f-hand); color: #FFE3A8; background: #05071a; z-index: 10000; }
+
+/* marcos para las tomas reales (cameos, tomas de apoyo, grabación de pantalla) */
+.marco { position: absolute; background: #FFF8E8; border-radius: 6px; box-shadow: 0 18px 44px rgba(3, 5, 22, .5), 0 3px 0 rgba(0, 0, 0, .12); }
+.marco .hueco { position: absolute; overflow: hidden; background: #161C44; background-image: repeating-linear-gradient(135deg, rgba(255, 197, 107, .10) 0 26px, rgba(255, 197, 107, 0) 26px 52px); }
+.marco .rot { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 7%; color: #FFE3A8; }
+.marco .rot .tipo { font: 800 22px/1 var(--f-body); letter-spacing: .2em; text-transform: uppercase; opacity: .8; }
+.marco .rot .quien { font: 700 56px/1.1 var(--f-head); margin-top: 12px; color: #FFF8E8; }
+.marco .rot .linea { font: 700 32px/1.25 var(--f-hand); margin-top: 14px; color: #FFE3A8; }
+body.limpio .marco .rot { display: none; }
+body.limpio .marco .hueco { background-image: none; }
+.chip { position: absolute; white-space: nowrap; font: 800 28px/1 var(--f-body); padding: 13px 22px 14px; border-radius: 40px; }

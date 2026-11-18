@@ -1,0 +1,288 @@
+---
+title: "Etapa 1"
+subtitle: "Descripción de los datos — MOLEC 2019–2024"
+format:
+  pdf:
+    toc: true
+execute:
+  warning: false
+  message: false
+---
+
+# Lectura de datos
+
+## Bases anuales 2019–2024
+
+```{r}
+# read.csv lee cada base; fileEncoding evita errores con acentos
+M19 <- read.csv("../datos/crudos/Datos_molec_2019-1.csv", fileEncoding = "latin1")
+M20 <- read.csv("../datos/crudos/Datos_molec_2020-1.csv", fileEncoding = "latin1")
+M21 <- read.csv("../datos/crudos/Datos_molec_2021-1.CSV", fileEncoding = "latin1")
+M22 <- read.csv("../datos/crudos/Datos_molec_2022-1.CSV", fileEncoding = "latin1")
+M23 <- read.csv("../datos/crudos/Datos_molec_2023-1.CSV", fileEncoding = "latin1")
+M24 <- read.csv("../datos/crudos/Datos_molec_2024-1.csv", fileEncoding = "latin1")
+```
+
+## Dimensión de cada base
+
+```{r}
+# dim da (filas, columnas)
+dim(M19)
+dim(M20)
+dim(M21)
+dim(M22)
+dim(M23)
+dim(M24)
+```
+
+# Tabla de secciones del cuestionario
+
+## Creación de la tabla
+
+```{r}
+# Una columna por cada tipo de pregunta
+secciones <- data.frame(
+  Sección = c("I. Preguntas generales sobre lectura", "II. Libros", "III. Revistas",
+              "IV. Periódicos", "V. Historietas", "VI. Páginas de internet, foros o blogs",
+              "VII. Características de la lectura", "VIII. Razones para la no lectura",
+              "IX. Asistencia a establecimientos", "X. Estímulos a la lectura en la infancia"),
+  Preguntas = c("1–3", "4–9", "10–15", "16–21", "22–23", "24–25", "26–31", "32", "33", "34–36"),
+  Total = c(3, 6, 6, 6, 2, 2, 6, 1, 1, 3),
+  `Opción única` = c(2, 3, 3, 3, 1, 2, 5, 1, 0, 1),
+  `Batería Sí/No` = c(1, 1, 1, 1, 0, 0, 0, 0, 1, 2),
+  `Respuesta múltiple` = c(0, 1, 1, 1, 1, 0, 0, 0, 0, 0),
+  `Abierta numérica` = c(0, 1, 1, 1, 0, 0, 1, 0, 0, 0),
+  check.names = FALSE
+)
+
+# Fila de totales
+total <- data.frame(Sección = "Total", Preguntas = "1–36", t(colSums(secciones[, 3:7])), check.names = FALSE)
+secciones <- rbind(secciones, total)
+
+secciones
+```
+
+# Selección de datos
+
+## Variables de interés
+
+```{r}
+# Nombres de las columnas que se conservan
+variables <- c("p3_1", "p4", "p3_5", "p8_1", "p8_2",
+               "p33_1", "p33_2", "p33_3", "p33_4",
+               "p34_1", "p34_2", "p34_3", "p34_3_1", "p34_4", "p34_4_1",
+               "p35", "p36_1", "p36_2", "p36_3", "p36_4",
+               "nivel", "edad", "sexo", "entidad", "p32")
+```
+
+## Data frame por año
+
+```{r}
+# Solo las columnas de interés de cada año
+M19selec <- M19[, variables]
+M20selec <- M20[, variables]
+M21selec <- M21[, variables]
+M22selec <- M22[, variables]
+M23selec <- M23[, variables]
+M24selec <- M24[, variables]
+```
+
+## Columna del año de la encuesta
+
+```{r}
+# rep repite el año tantas veces como filas tiene cada base
+anio_encuesta <- c(rep("2019", nrow(M19selec)), rep("2020", nrow(M20selec)),
+                   rep("2021", nrow(M21selec)), rep("2022", nrow(M22selec)),
+                   rep("2023", nrow(M23selec)), rep("2024", nrow(M24selec)))
+```
+
+## Nueva base de datos
+
+```{r}
+# rbind apila las seis bases; data.frame agrega la columna del año
+M19_24 <- data.frame(anio_encuesta, rbind(M19selec, M20selec, M21selec, M22selec, M23selec, M24selec))
+
+# entidad viene como texto ("01") en algunos años
+M19_24$entidad <- as.integer(M19_24$entidad)
+
+dim(M19_24)
+```
+
+## Eliminación de datos faltantes
+
+```{r}
+# na.omit quita las filas con algún NA
+M19_24 <- na.omit(M19_24)
+
+dim(M19_24)
+```
+
+# Diccionario de variables
+
+## Preguntas
+
+```{r}
+# Texto del cuestionario; nivel, edad, sexo y entidad vienen del Descriptor de preguntas
+preguntas <- c(
+  anio_encuesta = "Año de la encuesta",
+  p3_1 = "3. ¿Usted... 3a. en los últimos doce meses, leyó LIBROS?",
+  p4 = "4. ¿Cuántos libros leyó en los últimos doce meses?",
+  p3_5 = "3. ¿Usted... 3e. sin considerar redes sociales como Facebook y Twitter, lee PÁGINAS DE INTERNET, FOROS O BLOGS?",
+  p8_1 = "8. ¿El (Los) libro(s) que leyó se encontraba(n)... en formato digital?",
+  p8_2 = "8. ¿El (Los) libro(s) que leyó se encontraba(n)... impreso(s)?",
+  p33_1 = "33. En los últimos tres meses, ¿usted asistió... 33a. a la sección de libros y revistas de una tienda departamental?",
+  p33_2 = "33. En los últimos tres meses, ¿usted asistió... 33b. a un puesto de libros o revistas usados?",
+  p33_3 = "33. En los últimos tres meses, ¿usted asistió... 33c. a una biblioteca?",
+  p33_4 = "33. En los últimos tres meses, ¿usted asistió... 33d. a una librería?",
+  p34_1 = "34. ¿Cuando usted era niño(a)... 34a. sus padres o tutores lo(a) llevaban a bibliotecas o librerías?",
+  p34_2 = "34. ¿Cuando usted era niño(a)... 34b. veía a sus padres o tutores leer?",
+  p34_3 = "34. ¿Cuando usted era niño(a)... 34c. sus padres o tutores le leían?",
+  p34_3_1 = "34c1. ¿Quién le leía principalmente?",
+  p34_4 = "34. ¿Cuando usted era niño(a)... 34d. sin contar los libros de texto, había libros en su casa?",
+  p34_4_1 = "34d1. ¿Aproximadamente había...",
+  p35 = "35. ¿En su infancia usted asistió a la escuela primaria?",
+  p36_1 = "36. Cuando usted era niño(a), ¿en su escuela primaria sus maestros... 36a. le pedían leer otros libros además de los de texto?",
+  p36_2 = "36. Cuando usted era niño(a), ¿en su escuela primaria sus maestros... 36b. después de realizar alguna lectura, le pedían comentar o exponer lo leído?",
+  p36_3 = "36. Cuando usted era niño(a), ¿en su escuela primaria sus maestros... 36c. lo(a) motivaban para que leyera libros?",
+  p36_4 = "36. Cuando usted era niño(a), ¿en su escuela primaria sus maestros... 36d. lo(a) animaban para visitar bibliotecas?",
+  nivel = "Nivel de escolaridad. ¿Hasta qué año o grado aprobó en la escuela?",
+  edad = "Edad",
+  sexo = "Sexo",
+  entidad = "Entidad",
+  p32 = "32. ¿Cuál es el motivo principal por el que usted no lee los materiales de lectura antes mencionados?"
+)
+```
+
+## Opciones de las variables que se codifican en one-hot
+
+```{r}
+# Cada variable lleva su lista código = opción
+opciones <- list(
+  p8_1 = c("1" = "en formato digital"),
+  p8_2 = c("1" = "impreso(s)"),
+  p34_1 = c("1" = "Sí", "2" = "No", "3" = "No recuerda"),
+  p34_2 = c("1" = "Sí", "2" = "No", "3" = "No recuerda"),
+  p34_3 = c("1" = "Sí", "2" = "No", "3" = "No recuerda"),
+  p34_3_1 = c("1" = "Padre", "2" = "Madre", "3" = "Tutor"),
+  p34_4 = c("1" = "Sí", "2" = "No", "3" = "No recuerda"),
+  p34_4_1 = c("1" = "de 1 a 25 libros", "2" = "de 26 a 50 libros", "3" = "de 51 a 75 libros",
+              "4" = "de 76 a 100 libros", "5" = "más de 100 libros", "6" = "No recuerda"),
+  p36_1 = c("1" = "Sí", "2" = "No", "3" = "No recuerda"),
+  p36_2 = c("1" = "Sí", "2" = "No", "3" = "No recuerda"),
+  p36_3 = c("1" = "Sí", "2" = "No", "3" = "No recuerda"),
+  p36_4 = c("1" = "Sí", "2" = "No", "3" = "No recuerda"),
+  nivel = c("0" = "Ninguno", "1" = "Preescolar", "2" = "Primaria", "3" = "Secundaria",
+            "4" = "Preparatoria o bachillerato", "5" = "Normal básica", "6" = "Carrera técnica",
+            "7" = "Profesional", "8" = "Maestría", "9" = "Doctorado", "99" = "No sabe"),
+  entidad = c("1" = "Aguascalientes", "2" = "Baja California", "3" = "Baja California Sur",
+              "4" = "Campeche", "5" = "Coahuila de Zaragoza", "6" = "Colima", "7" = "Chiapas",
+              "8" = "Chihuahua", "9" = "Ciudad de México", "10" = "Durango", "11" = "Guanajuato",
+              "12" = "Guerrero", "13" = "Hidalgo", "14" = "Jalisco", "15" = "México",
+              "16" = "Michoacán de Ocampo", "17" = "Morelos", "18" = "Nayarit", "19" = "Nuevo León",
+              "20" = "Oaxaca", "21" = "Puebla", "22" = "Querétaro", "23" = "Quintana Roo",
+              "24" = "San Luis Potosí", "25" = "Sinaloa", "26" = "Sonora", "27" = "Tabasco",
+              "28" = "Tamaulipas", "29" = "Tlaxcala", "30" = "Veracruz de Ignacio de la Llave",
+              "31" = "Yucatán", "32" = "Zacatecas"),
+  p32 = c("1" = "Por falta de interés, motivación o gusto por la lectura",
+          "2" = "Preferencia de realizar otras actividades", "3" = "Por falta de tiempo",
+          "4" = "Por falta de dinero", "5" = "Por problemas de salud", "6" = "Otro")
+)
+```
+
+# Variables indicadoras (one-hot)
+
+## Columnas nuevas
+
+```{r}
+# Por cada opción se crea una columna 0/1 llamada variable_opCódigo (p32_op1)
+for (v in names(opciones)) {
+  for (codigo in names(opciones[[v]])) {
+    nombre <- paste0(v, "_op", codigo)
+    M19_24[[nombre]] <- as.integer(M19_24[[v]] == as.integer(codigo))
+  }
+}
+
+dim(M19_24)
+```
+
+## Diccionario de columnas
+
+```{r}
+# Una fila por columna original
+diccionario <- data.frame(columna = names(preguntas), pregunta = unname(preguntas), opcion = NA)
+
+# Se agrega una fila por cada columna one-hot
+for (v in names(opciones)) {
+  nuevas <- data.frame(columna = paste0(v, "_op", names(opciones[[v]])),
+                       pregunta = preguntas[[v]],
+                       opcion = unname(opciones[[v]]))
+  diccionario <- rbind(diccionario, nuevas)
+}
+rownames(diccionario) <- diccionario$columna
+rownames(diccionario) 
+```
+
+## Función de consulta
+
+```{r}
+# Columna original: devuelve la pregunta; columna one-hot: devuelve la opción
+que_es <- function(columna) {
+  fila <- diccionario[columna, ]
+  ifelse(is.na(fila$opcion), fila$pregunta, fila$opcion)
+}
+
+que_es("p32")
+que_es("p32_op1")
+que_es(c("p34_4_1", "p34_4_1_op5"))
+diccionario["p32_op1", ]
+```
+
+# Summary
+
+## Nueva base de datos
+
+```{r}
+summary(M19_24)
+```
+
+# Archivo de datos
+
+## Exportar la nueva base
+
+```{r}
+# write.csv guarda M19_24 en la carpeta de este archivo; row.names = FALSE omite el número de fila
+write.csv(M19_24, "../datos/procesados/molec_2019_2024.csv", row.names = FALSE)
+```
+
+# Calidad de datos
+
+## Valores nulos por variable
+
+```{r}
+# Código de "No recuerda" o "No sabe" de cada variable
+no_recuerda <- c(p34_1 = 3, p34_2 = 3, p34_3 = 3, p34_4 = 3, p34_4_1 = 6,
+                 p36_1 = 3, p36_2 = 3, p36_3 = 3, p36_4 = 3, nivel = 99)
+
+nulos <- data.frame(Variable = variables, `NA (%)` = NA, `Blanco por pase (%)` = NA,
+                    `No recuerda / No sabe (%)` = NA, check.names = FALSE)
+
+for (i in 1:length(variables)) {
+  v <- variables[i]
+  nulos[i, 2] <- round(100 * mean(is.na(M19_24[[v]])), 1)
+
+  # En nivel el 0 es "Ninguno", no un blanco
+  if (v == "nivel") {
+    nulos[i, 3] <- 0
+  } else {
+    nulos[i, 3] <- round(100 * mean(M19_24[[v]] == 0), 1)
+  }
+
+  if (v %in% names(no_recuerda)) {
+    nulos[i, 4] <- round(100 * mean(M19_24[[v]] == no_recuerda[[v]]), 1)
+  } else {
+    nulos[i, 4] <- 0
+  }
+}
+
+nulos
+```
