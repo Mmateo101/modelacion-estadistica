@@ -4,7 +4,7 @@ El video se arma como una página web que corre sola y se exporta a MP4 cuadro p
 
 | Página | Qué es |
 |---|---|
-| `nuevo.html` | **Versión 4 (la vigente):** teatro de papel con luz. 12 escenas, 4:53 |
+| `nuevo.html` | **Versión 4 (la vigente):** teatro de papel con luz. 12 escenas, 4:52 |
 
 ## Verla
 

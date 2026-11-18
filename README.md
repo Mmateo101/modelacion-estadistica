@@ -10,7 +10,7 @@ Proyecto de MA1001B · Modelación estadística para la toma de decisiones (Tecn
 | | Dónde |
 |---|---|
 | Presentación interactiva | [modelacion-estadistica-presentacion.vercel.app](https://modelacion-estadistica-presentacion.vercel.app) · carpeta raíz (`index.html`) |
-| Video del concurso (4:53) | [`video/Video_final.mp4`](video/Video_final.mp4) · la versión en alta calidad está en [Releases](../../releases) |
+| Video del concurso (4:52) | [`video/Video_final.mp4`](video/Video_final.mp4) · la versión en alta calidad está en [Releases](../../releases) |
 | Manuscrito final | [`manuscrito/Reporte_final.docx`](manuscrito/Reporte_final.docx) (10 páginas) · [versión extendida](manuscrito/Reporte_final_version_extendida.docx) · [abstract](manuscrito/Abstract.docx) |
 | Código en R | [`codigo/`](codigo) |
 | Bases de datos | [`datos/`](datos) |
