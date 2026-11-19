@@ -369,16 +369,16 @@
       N.camara(tl, pl, { z: -60 }, { z: 70 }, 0, T, "sine.inOut");
 
       const H = pl.hud;
-      const fcam = N.cameo(H, tl, { id: "C", quien: G.cameos[2], linea: "«Hicimos pruebas de hipótesis e intervalos de confianza en R, con significancia de 0.04.»", x: 110, y: 220, w: 720, h: 405, t0: 0.6, t1: 8.8, out: false });
-      N.slot(fcam, tl, { id: "P1", tipo: "Grabación de pantalla", quien: "RStudio corriendo las pruebas", linea: "prop.test · chisq.test · t.test", t0: 8.8, t1: 18.1, out: false });
+      const fcam = N.cameo(H, tl, { id: "C", quien: G.cameos[2], linea: "«Hicimos pruebas de hipótesis e intervalos de confianza en R, con significancia de 0.04.»", x: 110, y: 220, w: 720, h: 405, t0: 0.6, t1: 8.8 });
       const kT = W.kicker(pl, "TÉCNICAS Y SUPUESTOS", "#F3F1E4");
       N.show(tl, kT, 0.3, { y: 10 });
-      [["r_intervalos", -4, 120], ["r_pruebas", 3, 390], ["r_diferencias", -2, 640]].forEach(([n, rot, x], i) => {
-        const p = h("div", { style: { position: "absolute", left: x + "px", top: "690px", width: "240px", padding: "10px 10px 36px", background: "#FFFFFF", boxShadow: "0 12px 24px rgba(0,0,0,.4)", transform: `rotate(${rot}deg)` } }, H,
-          `<img src="assets/reporte/${n}.png" alt="" style="display:block;width:100%"><span style="position:absolute;left:0;right:0;bottom:6px;text-align:center;font:700 22px var(--f-hand);color:#6B6875">Salida original de R</span>`);
+      // salidas originales de R, grandes, en lugar de la grabación de pantalla
+      [["r_intervalos", -2, 120, 200], ["r_pruebas", 1.5, 150, 470], ["r_diferencias", -1, 110, 720]].forEach(([n, rot, x, y], i) => {
+        const p = h("div", { style: { position: "absolute", left: x + "px", top: y + "px", width: "660px", padding: "12px 12px 40px", background: "#FFFFFF", boxShadow: "0 12px 24px rgba(0,0,0,.4)", transform: `rotate(${rot}deg)` } }, H,
+          `<img src="assets/reporte/${n}.png" alt="" style="display:block;width:100%"><span style="position:absolute;left:0;right:0;bottom:6px;text-align:center;font:700 24px var(--f-hand);color:#6B6875">Salida original de R</span>`);
         tl.fromTo(p, { autoAlpha: 0, y: -60, rotation: rot - 10 }, { autoAlpha: 1, y: 0, rotation: rot, duration: 0.6, ease: "back.out(1.4)" }, 9.6 + i * 0.6);
       });
-      [[160, 196, -8], [740, 196, 7]].forEach(([x, y, rot]) => h("div", { style: { position: "absolute", left: x + "px", top: y + "px", width: "120px", height: "38px", background: "rgba(235,222,190,.82)", transform: `rotate(${rot}deg)`, boxShadow: "0 2px 4px rgba(0,0,0,.2)" } }, H));
+      [[160, 196, -8], [740, 196, 7]].forEach(([x, y, rot]) => tl.to(h("div", { style: { position: "absolute", left: x + "px", top: y + "px", width: "120px", height: "38px", background: "rgba(235,222,190,.82)", transform: `rotate(${rot}deg)`, boxShadow: "0 2px 4px rgba(0,0,0,.2)" } }, H), { autoAlpha: 0, duration: 0.4 }, 8.8));
       const gis = (html, o) => {
         const e = N.t(H, html, Object.assign({ font: "hand", color: "#F3F1E4", sombra: false }, o));
         e.style.textShadow = "0 0 3px rgba(255,255,255,.35)";

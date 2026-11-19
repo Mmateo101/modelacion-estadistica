@@ -3,7 +3,7 @@
 **Proyecto:** Análisis estadístico de la desigualdad en el acceso a la lectura en la infancia y su impacto en los hábitos de lectura en la vida adulta
 **Estado:** 12 escenas animadas (`animacion/nuevo.html`, también en `http://localhost:5500` con la vista previa). Duración: **4:52.3**. Faltan las fotos y cameos de cada quien, la voz en off y la música. El guion para grabar está en `Guion_Grabacion.md`.
 
-**Cambios de la versión 4:** ya no se menciona «Equipo 7» en ninguna parte · se agregó por qué importa el problema y cómo llevó a la pregunta · «Alcance» va en grande y la transición al fichero de la innovación es un vuelo a través de las fichas · rótulo «Innovación: los índices de acceso» · el pizarrón dice «hicimos pruebas de hipótesis e intervalos de confianza en R» · la independencia ya no explica los pasos: solo compara con lo esperado y da el resultado · el resultado 2 se queda solo con los intervalos (sin prueba z y sin textos que duraban muy poco) · el resultado 3 explica cómo se definieron los grupos y muestra la prueba que hicimos (z) · el impacto dice solo «Propuesta» · las cuatro despedidas van dentro del libro.
+**Cambios de la versión 4:** ya no se menciona «Equipo 7» en ninguna parte · se agregó por qué importa el problema y cómo llevó a la pregunta · «Alcance» va en grande y la transición al fichero de la innovación es un vuelo a través de las fichas · rótulo «Innovación: los índices de acceso» · el pizarrón dice «hicimos pruebas de hipótesis e intervalos de confianza en R» · la independencia ya no explica los pasos: solo compara con lo esperado y da el resultado · el resultado 2 se queda solo con los intervalos (sin prueba z y sin textos que duraban muy poco) · el resultado 3 explica cómo se definieron los grupos y muestra la prueba que hicimos (z) · el impacto dice solo «Propuesta» · se quitó la grabación de pantalla de RStudio · las cuatro despedidas van dentro del libro.
 
 ---
 
@@ -14,7 +14,7 @@
 | MP4, 3 a 5 min, nombre ≤ 30 caracteres | 1920×1080, 30 fps, 4:52.3 · propuesta de nombre: `AccesoLectura_MA1001B.mp4` | Cumple. Quedan 7.7 s de margen: si la edición alarga algo, se pasa |
 | No generado completamente con IA | Voces, fotos y cameos del equipo | Cumple cuando graben sus partes; hoy la voz es de prueba |
 | Explicación audible | Narración en todas las escenas | Cumple |
-| Imágenes o extractos de las pruebas | Escena 5: grabación de pantalla de RStudio y tres salidas originales de R; cada resultado inferencial muestra estadístico o intervalo, valor frontera y decisión | Cumple. La grabación de pantalla falta |
+| Imágenes o extractos de las pruebas | Escena 5: tres salidas originales de R, en grande; cada resultado inferencial muestra estadístico o intervalo, valor frontera y decisión | Cumple |
 | Ni solo demo ni solo explicación | Cameos + voz + animación de resultados | Cumple |
 | Presentación: proyecto, integrantes, tutoras, modelo educativo, clase | Escena 2 | La voz dice «estudiantes de profesional del Tec de Monterrey», la clase y las tutoras |
 | Define el problema | Escena 3 | Rótulo «EL PROBLEMA» y el cameo empieza con «El problema:» |
@@ -99,7 +99,7 @@ En pantalla: «Alcance» · «seis levantamientos · 2019–2024» · «11,685 a
 
 ### 5 · Técnicas y supuestos (18.5 s)
 
-El pizarrón. Eliel en el marco, luego la grabación de pantalla de RStudio; debajo, tres salidas originales de R. Con gis, tres curvas y el supuesto de cada técnica, con palomita.
+El pizarrón. Eliel en el marco; cuando sale, entran en grande tres salidas originales de R (intervalos, pruebas y diferencias). Con gis, tres curvas y el supuesto de cada técnica, con palomita.
 
 > (cameo 2) Hicimos pruebas de hipótesis e intervalos de confianza en R, con significancia de 0.04.
 > (voz) Cada técnica tiene su propio supuesto, y verificamos cada uno.

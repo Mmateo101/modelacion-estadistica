@@ -90,6 +90,6 @@ Nota de datos: las barras de error de la gráfica «solo escuela frente a solo h
 
 ## Video
 
-`video/animacion/` contiene la animación completa del video: una página web que corre sola y se exporta a MP4 cuadro por cuadro con Chrome sin interfaz y ffmpeg. Las instrucciones están en [`video/animacion/LEEME.md`](video/animacion/LEEME.md). Los marcos de los cameos y la voz guía se sustituyen por las tomas reales del equipo en la edición final; el guion de grabación está en `video/guiones/`.
+`video/animacion/` contiene la animación completa del video: una página web que corre sola y se exporta a MP4 cuadro por cuadro con Chrome sin interfaz y ffmpeg. Las instrucciones están en [`video/animacion/LEEME.md`](video/animacion/LEEME.md). Los marcos de los cameos y la voz guía se sustituyen por las tomas reales del equipo en la edición final; el guion de grabación (qué dice cada quien) está en `video/guiones/Que_graba_cada_quien.docx`.
 
 Se usó IA (Claude, de Anthropic) como apoyo en el código, la redacción y la animación. El equipo verificó todos los resultados.
