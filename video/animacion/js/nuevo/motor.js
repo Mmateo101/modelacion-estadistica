@@ -91,14 +91,53 @@
       return f;
     },
     slot(f, tl, o) {
-      const rot = h("div", { class: "rot" }, f.hueco, `<div class="tipo">${o.tipo || "Cameo"} · ${o.id}</div><div class="quien">${o.quien || ""}</div>` + (o.linea ? `<div class="linea">${o.linea}</div>` : ""));
-      gsap.set(rot, { autoAlpha: 0 });
-      tl.set(rot, { autoAlpha: 1 }, o.t0);
-      tl.set(rot, { autoAlpha: 0 }, o.t1);
+      // ¿hay grabación real para este marco? (G.medios, cam = id del marco)
+      const cur = N._cur;
+      const clips = (G.medios || []).filter((m) => m.video && m.cam === o.id && cur && m.escena === cur.id);
+      if (clips.length) {
+        const grupo = clips.map((m) => {
+          const v = h("video", { preload: "auto", playsinline: "", src: `media/${m.src}.mp4`, style: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", visibility: "hidden" } }, f.hueco);
+          v.muted = true;
+          return { v, m };
+        });
+        N.videos.push({ grupo, desde: cur.t0 - 1, hastaT: cur.t1 + 1 });
+      } else {
+        const rot = h("div", { class: "rot" }, f.hueco, `<div class="tipo">${o.tipo || "Cameo"} · ${o.id}</div><div class="quien">${o.quien || ""}</div>` + (o.linea ? `<div class="linea">${o.linea}</div>` : ""));
+        gsap.set(rot, { autoAlpha: 0 });
+        tl.set(rot, { autoAlpha: 1 }, o.t0);
+        tl.set(rot, { autoAlpha: 0 }, o.t1);
+      }
       const base = N._cur ? N._cur.t0 : 0;
       N.cameos.push({ id: o.id, tipo: o.tipo || "Cameo", quien: o.quien || "", linea: o.linea || "", t0: +(base + o.t0).toFixed(2), t1: +(base + o.t1).toFixed(2), x: f.rect.x, y: f.rect.y, w: f.rect.w, h: f.rect.h });
       if (o.out !== false) tl.to(f.box, { autoAlpha: 0, scale: 0.94, duration: 0.4 }, o.t1);
       return f;
+    },
+
+    /* ---------- grabaciones reales dentro de los marcos ---------- */
+    videos: [],
+    /* Pone cada video en el cuadro que toca en el segundo t. exacto = espera a que el video termine de buscar (render). */
+    syncVideos(t, exacto) {
+      const esperas = [];
+      N.videos.forEach((V) => {
+        if (t < V.desde || t > V.hastaT) { V.grupo.forEach(({ v }) => { if (!v.paused) v.pause(); }); return; }
+        let act = V.grupo[0];
+        V.grupo.forEach((c) => { if (c.m.abs <= t) act = c; });
+        const m = act.m, local = Math.min(Math.max(m.ss + (t - m.abs), m.ss), m.hasta - 0.04);
+        V.grupo.forEach((c) => { const vis = c === act ? "visible" : "hidden"; if (c.v.style.visibility !== vis) c.v.style.visibility = vis; if (c !== act && !c.v.paused) c.v.pause(); });
+        const v = act.v;
+        const corriendo = !exacto && t >= m.abs && t < m.abs + (m.hasta - m.ss);
+        if (corriendo) {
+          if (v.paused) { v.currentTime = local; v.play().catch(() => {}); }
+          else if (Math.abs(v.currentTime - local) > 0.25) v.currentTime = local;
+        } else {
+          if (!v.paused) v.pause();
+          if (Math.abs(v.currentTime - local) > 0.001) {
+            esperas.push(new Promise((r) => { const fin = () => { v.removeEventListener("seeked", fin); r(); }; v.addEventListener("seeked", fin); setTimeout(fin, 4000); }));
+            v.currentTime = local;
+          }
+        }
+      });
+      return Promise.all(esperas);
     },
 
     /* ---------- cámara y transiciones entre planos ---------- */
@@ -194,12 +233,15 @@
     const lista = G.escenas.map((g) => N.scenes.find((d) => d.id === g.id)).filter(Boolean);
     lista.forEach((def) => {
       const g = byId[def.id];
-      def.t0 = g.t0; def.t1 = g.t1; def.T = g.dur;
+      def.t0 = g.t0; def.t1 = g.t1; def.T = g.Tin || g.dur;
       N._cur = def;
       def.el = h("div", { class: "escena", id: "e-" + def.id }, mundo);
-      def.tl = gsap.timeline();
+      def.tl = gsap.timeline({ paused: true });
       def.build(def.el, def.tl, def.T);
-      M.add(def.tl, def.t0);
+      // la escena corre con su mapa de tiempo (voz a 1×, silencios comprimidos; ver guion.js)
+      const mp = g.mapa || [[0, 0], [g.dur, def.T]], outD = g.dur, inD = def.T;
+      const curva = (p) => { const x = p * outD; for (let k = 1; k < mp.length; k++) if (x <= mp[k][0] || k === mp.length - 1) { const [o0, i0] = mp[k - 1], [o1, i1] = mp[k]; return (o1 === o0 ? i1 : i0 + ((x - o0) * (i1 - i0)) / (o1 - o0)) / inD; } return 1; };
+      M.fromTo(def.tl, { time: 0 }, { time: inD, duration: outD, ease: curva, immediateRender: false }, def.t0);
     });
     N._cur = null;
     /* Transiciones entre escenas: 'fundido' (por defecto), 'hoja' o 'iris' (con def.irisEn = [x, y]) */
@@ -238,7 +280,10 @@
     });
     M.to({}, { duration: 0.001 }, G.dur);
     document.getElementById("loading").remove();
-    M.eventCallback("onUpdate", () => guide(M.time()));
+    M.eventCallback("onUpdate", () => { guide(M.time()); if (!N.render) N.syncVideos(M.time(), M.paused()); });
+    // esperar a que carguen los videos de los marcos
+    const todos = N.videos.flatMap((V) => V.grupo.map((c) => c.v));
+    await Promise.race([Promise.all(todos.map((v) => (v.readyState >= 2 ? 1 : new Promise((r) => { v.addEventListener("loadeddata", r, { once: true }); v.addEventListener("error", r, { once: true }); })))), new Promise((r) => setTimeout(r, 15000))]);
 
     const marks = document.querySelector("#barra .marks");
     G.escenas.slice(1).forEach((e) => h("i", { style: { left: (e.t0 / G.dur) * 100 + "%" } }, marks));
@@ -256,10 +301,11 @@
 
     window.__M = M; window.__dur = G.dur; window.__fps = G.fps;
     window.__cameos = () => JSON.stringify(N.cameos);
-    window.__seek = (t) => { M.seek(Math.min(t, G.dur), false); guide(t); return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))); };
+    window.__seek = async (t) => { M.seek(Math.min(t, G.dur), false); guide(t); await N.syncVideos(Math.min(t, G.dur), true); return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))); };
     const m = /[#&]t=([\d.]+)/.exec(location.hash);
     M.seek(m ? +m[1] : 0, false);
     guide(M.time());
+    await N.syncVideos(M.time(), true);
     window.__ready = true;
     if (!N.render && !m) M.play();
   };

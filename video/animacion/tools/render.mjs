@@ -31,7 +31,7 @@ try {
   writeFileSync(join(outDir, "cameos.json"), JSON.stringify(JSON.parse(await b.eval("window.__cameos()")), null, 2));
 
   const ff = spawn("ffmpeg", ["-y", "-loglevel", "error", "-f", "image2pipe", "-framerate", String(fps), "-c:v", "mjpeg", "-i", "-",
-    "-c:v", "libx264", "-preset", "medium", "-crf", "17", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-r", String(fps), out], { stdio: ["pipe", "inherit", "inherit"] });
+    "-c:v", "libx264", "-preset", opt.crf ? "fast" : "medium", "-crf", String(opt.crf || 17), "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-r", String(fps), out], { stdio: ["pipe", "inherit", "inherit"] });
   const done = new Promise((res, rej) => { ff.on("close", (c) => (c === 0 ? res() : rej(new Error("ffmpeg salió con código " + c)))); });
   const n = Math.round((t1 - t0) * fps);
   const started = Date.now();

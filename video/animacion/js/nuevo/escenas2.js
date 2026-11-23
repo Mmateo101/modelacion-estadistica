@@ -5,6 +5,17 @@
   const D = window.DATA;
   const FRA = "Fraunces, serif", NUN = "Nunito, sans-serif";
 
+  /* pared verde del estudio (MOLEC, alcance e innovación) */
+  const muroVerde = (pl) => {
+    const m = pl.capa(-600, { sombra: false });
+    rect(m, -480, -270, 2880, 1620, "#1B3A31");
+    for (let x = -480; x < 2400; x += 160) rect(m, x, -270, 5, 980, "#163029");
+    rect(m, -480, 700, 2880, 720, "#4A2E1E");
+    rect(m, -480, 690, 2880, 16, "#6B4428");
+    for (let x = -480; x < 2400; x += 240) rect(m, x + 20, 740, 200, 220, "none", { stroke: "#3E2618", "stroke-width": 5, rx: 6 });
+    return m;
+  };
+
   /* ================= 2 · Quiénes somos: el álbum del equipo ================= */
   N.add({
     id: "equipo", entrada: "iris", irisEn: [960, 470],
@@ -96,7 +107,72 @@
       const etq = (t) => `<div style="font:800 22px/1 var(--f-body);letter-spacing:.2em;color:#7B2D43;margin-bottom:10px">${t}</div>`;
       const f1 = ficha(196, -1.5, `<img src="assets/tec_logo.png" alt="" style="height:62px;display:block;margin-bottom:16px">${etq("CLASE")}<div style="font:700 40px/1.15 var(--f-head)">MA1001B · Modelación estadística para la toma de decisiones</div><div style="font:700 28px/1.4 var(--f-body);margin-top:8px">Profesional · Campus Monterrey</div>`);
       const f2 = ficha(590, 1.2, `${etq("TUTORAS")}<div style="font:700 33px/1.45 var(--f-head);white-space:nowrap">Dra. Blanca Rosa Ruiz Hernández<br>Dra. María Guadalupe Tobías Lara</div>`);
-      [[f1, 18.2], [f2, 21.4]].forEach(([d, t]) => tl.fromTo(d, { autoAlpha: 0, x: 760, rotation: d._rot + 12 }, { autoAlpha: 1, x: 0, rotation: d._rot, duration: 0.9, ease: "power3.out" }, t));
+      [[f1, 18.2], [f2, 21.9]].forEach(([d, t]) => tl.fromTo(d, { autoAlpha: 0, x: 760, rotation: d._rot + 12 }, { autoAlpha: 1, x: 0, rotation: d._rot, duration: 0.9, ease: "power3.out" }, t));
+    },
+  });
+
+  /* ================= 2b · Los datos: qué es el MOLEC (puente entre quiénes somos y el problema) =================
+     El álbum se pasa como una hoja y aparece el cuestionario del MOLEC. Al final se resalta su primera pregunta
+     («¿Leyó algún libro…?») y la cámara se acerca: su respuesta es el 41.7% con que abre el problema. */
+  N.add({
+    id: "molec", entrada: "hoja",
+    build(el, tl, T) {
+      const pm = A.plano(el, { fondo: "#14271F" });
+      N.entra(tl, pm, 0);
+      muroVerde(pm);
+      const luzM = pm.capaLuz(-300);
+      A.halo(luzM, 520, 460, 760, "rgba(255,214,140,.30)");
+      A.halo(luzM, 1400, 300, 700, "rgba(255,214,140,.18)");
+      N.camara(tl, pm, { z: -80 }, { z: 0 }, 0, 2.0, "power2.out");
+      tl.to(pm.cam, { z: 60, duration: T - 2.0, ease: "none" }, 2.0);
+      const HM = pm.hud;
+      // una hoja del cuestionario, con algunas de sus preguntas
+      const hoja = h("div", { style: { position: "absolute", left: "140px", top: "170px", width: "720px", height: "790px", background: "repeating-linear-gradient(#FFFDF6 0 46px, #E9DFC9 46px 48px)", borderRadius: "8px", boxShadow: "0 34px 64px rgba(0,0,0,.5)", transform: "rotate(-2.5deg)", color: "#2B2340" } }, HM,
+        `<div style="position:absolute;left:48px;top:40px;font:800 22px/1 var(--f-body);letter-spacing:.24em;color:#7B2D43">MÓDULO SOBRE LECTURA</div>
+         <div style="position:absolute;left:48px;top:76px;font:700 22px/1.3 var(--f-body);color:#7A6E62">Algunas de sus preguntas</div>`);
+      h("div", { style: { position: "absolute", left: "26px", top: 0, bottom: 0, width: "3px", background: "#D9534F", opacity: 0.7 } }, hoja);
+      const preguntas = ["¿Leyó algún libro en los últimos 12 meses?", "¿Cuántos libros leyó?", "De niño, ¿había libros en su casa?", "¿Sus padres leían?", "¿Le leían?", "En la primaria, ¿lo motivaban a leer?"];
+      let marca = null;
+      const filasM = preguntas.map((q, i) => {
+        const y = 150 + i * 96;
+        const row = h("div", { style: { position: "absolute", left: "48px", top: y + "px", width: "630px", height: "80px" } }, hoja);
+        if (i === 0) marca = h("div", { style: { position: "absolute", left: "-10px", top: "4px", width: "540px", height: "72px", background: "rgba(255,206,84,.75)", borderRadius: "6px", transformOrigin: "0 50%", transform: "scaleX(0)" } }, row);
+        h("div", { style: { position: "absolute", left: 0, top: "10px", width: "520px", font: "700 29px/1.25 var(--f-body)", color: i < 2 ? "#2B2340" : "#3B4E86" } }, row, q);
+        h("div", { style: { position: "absolute", right: 0, top: "12px", width: "52px", height: "52px", border: "4px solid #2B2340", borderRadius: "8px", background: "#FFFDF6" } }, row);
+        const cs = s("svg", { width: 60, height: 60, style: "position:absolute;right:-4px;top:4px;overflow:visible" }, row);
+        const ck = W.palomita(cs, 10, 32, 1.15, "#2F8F6B", 8);
+        return { row, ck };
+      });
+      tl.fromTo(hoja, { autoAlpha: 0, y: 260, rotation: 4 }, { autoAlpha: 1, y: 0, rotation: -2.5, duration: 1.0, ease: "power3.out" }, 0.3);
+      filasM.forEach((f, i) => {
+        tl.fromTo(f.row, { autoAlpha: 0, x: -16 }, { autoAlpha: 1, x: 0, duration: 0.4 }, 1.0 + i * 0.3);
+        const t = i < 2 ? 9.2 + i * 0.4 : 11.0 + (i - 2) * 0.4;
+        tl.set(f.ck, { opacity: 1 }, t);
+        N.draw(tl, f.ck, t, 0.25);
+      });
+      // a la derecha: qué es
+      const tM = N.t(HM, "MOLEC", { x: 960, y: 150, w: 880, size: 150, color: "#FFE3A8", weight: 700 });
+      tM.style.textShadow = "0 0 24px rgba(255,197,107,.5)";
+      const sM = N.t(HM, "Módulo sobre Lectura · INEGI", { x: 968, y: 330, w: 880, size: 54, font: "hand", color: "#FFF4D8" });
+      const ptsM = [
+        ["Encuesta del INEGI, cada febrero desde 2015", 4.6],
+        ["Personas de 18 años o más que saben leer y escribir", 6.2],
+        ["En las 32 principales áreas urbanas del país", 7.5],
+        ["Pregunta qué leen hoy… y qué estímulos de lectura tuvieron en la infancia", 9.0],
+      ].map(([txt, t]) => {
+        const d = h("div", { style: { position: "absolute", left: "968px", width: "860px", font: "700 36px/1.3 var(--f-body)", color: "#EAF3EE", paddingLeft: "40px" } }, HM,
+          `<span style="position:absolute;left:0;top:13px;width:16px;height:16px;border-radius:50%;background:#F2B24C"></span>${txt}`);
+        return [d, t];
+      });
+      let yM = 450;
+      ptsM.forEach(([d, t]) => { d.style.top = yM + "px"; yM += (d.offsetHeight || 47) + 24; N.show(tl, d, t, { x: 24, y: 0 }); });
+      N.write(tl, tM, 0.7, 0.8);
+      N.show(tl, sM, 1.4, { y: 10 });
+      // salida: se resalta la primera pregunta y la cámara se acerca a ella (su respuesta abre el problema)
+      N.hide(tl, [tM, sM, ...ptsM.map((p) => p[0])], 13.5, 0.4);
+      tl.to(filasM.slice(1).map((f) => f.row), { opacity: 0.3, duration: 0.5 }, 13.6);
+      tl.to(marca, { scaleX: 1, duration: 0.6, ease: "power2.out" }, 13.8);
+      tl.to(hoja, { scale: 1.9, x: 580, y: 517, rotation: 0, duration: 1.5, ease: "power2.inOut" }, 13.8);
     },
   });
 
@@ -159,14 +235,14 @@
 
       // ---- cameo y datos
       const H = pl.hud;
-      N.cameo(H, tl, { id: "B", quien: G.cameos[1], linea: "«El problema: … solo 41.7% de los adultos alfabetos de la muestra leyó al menos un libro en el último año.»", x: 100, y: 250, w: 800, h: 450, t0: 0.6, t1: 12.5 });
+      N.cameo(H, tl, { id: "B", quien: G.cameos[1], linea: "«El problema que encontramos es que… solo el 41.7%… había leído al menos un libro en el último año.»", x: 90, y: 250, w: 860, h: 484, t0: 0.6, t1: 10.3 });
       const kP = W.kicker(pl, "EL PROBLEMA");
       const kM = W.kicker(pl, "POR QUÉ IMPORTA");
       const kQ = W.kicker(pl, "PREGUNTA DE INVESTIGACIÓN");
       gsap.set([kM, kQ], { autoAlpha: 0 });
       N.show(tl, kP, 0.3, { y: 10 });
       W.relevo(tl, kP, kM, 12.6);
-      W.relevo(tl, kM, kQ, 22.6);
+      W.relevo(tl, kM, kQ, 21.0);
       const big = W.neon(H, "0.0%", { x: 1000, y: 70, w: 860, size: 130, align: "center", color: "#FFF4D8", glow: "#FFB75E" });
       const lab = N.t(H, "leyó al menos un libro en el último año", { x: 1000, y: 214, w: 860, size: 32, font: "body", align: "center", color: "#FFF4D8" });
       const src = N.t(H, "MOLEC, INEGI, 2019–2024 · muestra analítica", { x: 1000, y: 254, w: 860, size: 22, font: "body", align: "center", color: "#C9C3E6" });
@@ -176,10 +252,10 @@
       tl.to(sol, { attr: { cy: 980 }, duration: 7, ease: "power1.in" }, 1.0);
       tl.fromTo(est, { opacity: 0 }, { opacity: (i) => 0.4 + ((i * 37) % 60) / 100, duration: 3, stagger: { amount: 4 } }, 5.0);
       faroles.forEach((f, i) => tl.to(f, { opacity: 1, duration: 0.4 }, 3.0 + i * 0.25));
-      tl.fromTo([big, lab, src], { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.6, stagger: 0.15 }, 6.0);
-      W.cuenta(tl, big, 0, 41.7, 6.1, 2.6, W.pct);
+      tl.fromTo([big, lab, src], { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.6, stagger: 0.15 }, 2.9);
+      W.cuenta(tl, big, 0, 41.7, 3.0, 1.6, W.pct);
       encendidas.forEach((idx, k) => {
-        const t = 6.1 + (k / nLuz) * 2.6, o = ventanas[idx];
+        const t = 3.0 + (k / nLuz) * 1.6, o = ventanas[idx];
         tl.to(o.v, { fill: "#FFD27A", duration: 0.1, ease: "none" }, t);
         tl.to(o.b, { opacity: 0.8, duration: 0.35 }, t);
       });
@@ -187,7 +263,7 @@
 
       // ---- la cámara sube al cielo: la pregunta
       tl.to(pl.cam, { y: 520, z: 60, duration: 2.0, ease: "power2.inOut" }, 12.4);
-      tl.to(pl.cam, { y: 680, z: 100, duration: 2.0, ease: "power2.inOut" }, 22.2);
+      tl.to(pl.cam, { y: 680, z: 100, duration: 2.0, ease: "power2.inOut" }, 20.6);
       const imp = N.t(H, 'El hábito lector se forma en la <span class="hl">infancia</span>…', { x: 160, y: 330, w: 1600, size: 78, align: "center", color: "#FFF8E8" });
       const imp2 = N.t(H, '…y el acceso a la lectura no es igual para todos.', { x: 160, y: 470, w: 1600, size: 62, font: "hand", align: "center", color: "#FFE3A8" });
       const ih = imp.querySelector(".hl");
@@ -195,19 +271,19 @@
       ih.style.textShadow = "0 0 18px #FFB75E, 0 0 40px #FF9E3D";
       N.write(tl, imp, 13.0, 1.8);
       N.write(tl, imp2, 16.2, 1.6);
-      N.hide(tl, [imp, imp2], 22.3, 0.5);
+      N.hide(tl, [imp, imp2], 20.7, 0.5);
       const q = N.t(H, '¿Cómo se relaciona el <span class="hl">acceso</span> a la lectura en la infancia con leer libros de adulto?', { x: 160, y: 340, w: 1600, size: 76, align: "center", color: "#FFF8E8" });
       const hl = q.querySelector(".hl");
       hl.style.color = "#FFC56B";
       hl.style.textShadow = "0 0 18px #FFB75E, 0 0 40px #FF9E3D";
-      N.write(tl, q, 22.9, 2.4);
+      N.write(tl, q, 21.3, 2.4);
       const sub = (x, txt) => h("div", { class: "chip", style: { left: x + "px", top: "600px", background: "rgba(255,248,232,.10)", border: "3px solid #FFC56B", color: "#FFF8E8", fontSize: "34px", padding: "16px 28px" } }, H, txt);
       const ca = sub(470, "a) ¿Leyó o no leyó libros?"), cb = sub(1010, "b) ¿Cuántos libros leyó?");
-      N.show(tl, ca, 27.4, { y: 16 });
-      N.show(tl, cb, 29.2, { y: 16 });
-      tl.to(fugaz, { opacity: 1, duration: 0.1 }, 25.2);
-      tl.fromTo(fugaz, { x: 1500, y: 140 }, { x: 600, y: 440, duration: 1.0, ease: "power1.in" }, 25.2);
-      tl.to(fugaz, { opacity: 0, duration: 0.3 }, 26.0);
+      N.show(tl, ca, 25.3, { y: 16 });
+      N.show(tl, cb, 28.5, { y: 16 });
+      tl.to(fugaz, { opacity: 1, duration: 0.1 }, 24.0);
+      tl.fromTo(fugaz, { x: 1500, y: 140 }, { x: 600, y: 440, duration: 1.0, ease: "power1.in" }, 24.0);
+      tl.to(fugaz, { opacity: 0, duration: 0.3 }, 24.8);
     },
   });
 
@@ -215,16 +291,6 @@
   N.add({
     id: "datos",
     build(el, tl, T) {
-      const muroVerde = (pl) => {
-        const m = pl.capa(-600, { sombra: false });
-        rect(m, -480, -270, 2880, 1620, "#1B3A31");
-        for (let x = -480; x < 2400; x += 160) rect(m, x, -270, 5, 980, "#163029");
-        rect(m, -480, 700, 2880, 720, "#4A2E1E");
-        rect(m, -480, 690, 2880, 16, "#6B4428");
-        for (let x = -480; x < 2400; x += 240) rect(m, x + 20, 740, 200, 220, "none", { stroke: "#3E2618", "stroke-width": 5, rx: 6 });
-        return m;
-      };
-
       // ---------- plano A · el alcance: el fichero
       const pa = A.plano(el, { fondo: "#14271F" });
       N.entra(tl, pa, 0);
@@ -276,10 +342,10 @@
       const areas = N.t(cnt, "32 áreas urbanas", { x: 0, y: 300, w: 660, size: 40, font: "body", align: "center", color: "#CFE3D6" });
       const src = N.t(cnt, "Módulo sobre Lectura (MOLEC) · INEGI", { x: 0, y: 358, w: 660, size: 24, font: "body", align: "center", color: "#CFE3D6" });
       N.write(tl, tA, 0.3, 0.9);
-      N.show(tl, anios, 1.4, { y: 10 });
-      N.show(tl, [num, adul, src], 7.0, { y: 10, stagger: 0.15 });
-      W.cuenta(tl, num, 0, D.general.alfabetos, 7.0, 3.0, W.mil);
-      N.show(tl, areas, 10.4, { y: 10 });
+      N.show(tl, anios, 2.6, { y: 10 });
+      N.show(tl, [num, adul, src], 7.4, { y: 10, stagger: 0.15 });
+      W.cuenta(tl, num, 0, D.general.alfabetos, 7.5, 2.0, W.mil);
+      N.show(tl, areas, 10.1, { y: 10 });
       N.camara(tl, pa, { z: -70 }, { z: 30 }, 0, 12.6, "sine.inOut");
       // transición: las fichas vuelan hacia la cámara y atravesamos el fichero
       cajones.forEach((c, i) => tl.to(c.frente, { scale: 1, y: 0, duration: 0.3 }, 12.4 + i * 0.04));
@@ -291,35 +357,38 @@
       tl.to(destello, { opacity: 1, duration: 0.35, ease: "power2.in" }, 13.4);
       tl.to(destello, { opacity: 0, duration: 0.7, ease: "power2.out" }, 13.85);
 
+      const DM = 0;
+      const tB = gsap.timeline();
+      tl.add(tB, DM);
       // ---------- plano B · la innovación: los índices de acceso
       const pb = A.plano(el, { fondo: "#14271F" });
       muroVerde(pb);
       const luzB = pb.capaLuz(-300);
       A.halo(luzB, 960, 300, 900, "rgba(255,214,140,.26)");
-      N.atraves(tl, pa, pb, 13.3, 0.8);
-      N.camara(tl, pb, { z: 160 }, { z: 0 }, 13.5, 15.2, "power2.out");
-      tl.to(pb.cam, { z: 40, duration: T - 15.2, ease: "none" }, 15.2);
+      N.atraves(tB, pa, pb, 13.3, 0.8);
+      N.camara(tB, pb, { z: 160 }, { z: 0 }, 13.5, 15.2, "power2.out");
+      tB.to(pb.cam, { z: 40, duration: T - DM - 15.2, ease: "none" }, 15.2);
       const H = pb.hud;
       const tI = N.t(H, "Innovación", { x: 110, y: 40, size: 120, color: "#FFE3A8", weight: 700 });
       tI.style.textShadow = "0 0 22px rgba(255,197,107,.5)";
       tI.style.transformOrigin = "0 0";
       const sI = N.t(H, "los índices de acceso", { x: 116, y: 176, size: 58, font: "hand", color: "#FFF4D8" });
-      N.write(tl, tI, 14.0, 0.9);
-      N.show(tl, sI, 14.7, { y: 10 });
-      N.cameo(H, tl, { id: "E", quien: G.cameos[4], linea: "«La innovación: con ocho preguntas sueltas de la encuesta construimos dos índices de acceso a la lectura.»", x: 110, y: 290, w: 760, h: 428, t0: 14.4, t1: 22.0 });
-      const idx = h("div", { style: { position: "absolute", left: "980px", top: "300px", width: "860px" } }, H,
+      N.write(tB, tI, 14.0, 0.9);
+      N.show(tB, sI, 14.7, { y: 10 });
+      N.cameo(H, tB, { id: "E", quien: G.cameos[4], linea: "«Nuestra innovación fue que usamos ocho preguntas de la encuesta… y construimos dos índices de acceso a la lectura.»", x: 90, y: 286, w: 680, h: 680, t0: 14.4, t1: 26.1 });
+      const idx = h("div", { style: { position: "absolute", left: "890px", top: "390px", width: "900px" } }, H,
         `<div style="font:700 60px/1.1 var(--f-head);color:#FFF4D8">Dos índices de acceso</div>
          <div style="margin-top:30px;font:800 36px/1.55 var(--f-body);color:#F2B24C">Hogar · 4 preguntas · de 0 a 4</div>
          <div style="font:800 36px/1.55 var(--f-body);color:#8FC4FF">Primaria · 4 preguntas · de 0 a 4</div>
          <div style="margin-top:26px;font:700 28px/1.35 var(--f-body);color:#CFE3D6">Los construimos nosotros a partir de ocho preguntas sueltas del MOLEC.</div>`);
-      N.show(tl, idx, 15.4, { x: 30, y: 0 });
-      N.hide(tl, idx, 21.6, 0.4);
-      tl.to(tI, { scale: 0.42, duration: 0.7, ease: "power2.inOut" }, 21.7);
-      N.hide(tl, sI, 21.7, 0.3);
+      N.show(tB, idx, 15.4, { x: 30, y: 0 });
+      N.hide(tB, idx, 25.7, 0.4);
+      tB.to(tI, { scale: 0.42, duration: 0.7, ease: "power2.inOut" }, 25.8);
+      N.hide(tB, sI, 25.8, 0.3);
 
       // ---------- las ocho preguntas, en dos índices
       const t2 = gsap.timeline();
-      tl.add(t2, 15.2);
+      tB.add(t2, 19.2);
       const paneles = [
         { x: 120, color: "#F2B24C", titulo: "Índice del hogar", items: ["Había libros en casa", "Sus padres leían", "Le leían", "Lo llevaban a bibliotecas o librerías"] },
         { x: 990, color: "#8FC4FF", titulo: "Índice de la primaria", items: ["Le pedían otras lecturas", "Comentaba lo leído", "Lo motivaban a leer", "Lo animaban a ir a bibliotecas"] },

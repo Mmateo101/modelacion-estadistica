@@ -63,8 +63,8 @@
         return fn;
       };
       const casos = [
-        { cx: 680, col: "#3C6FB4", colB: "#9CCBFF", p: 27.0, t0: 10.4, t1: 13.0, nombre: "Solo en la escuela", como: "como Héctor", n: "1,977 personas", def: "al menos un estímulo en la escuela y <b>ninguno</b> en casa", tc: "#9CCBFF", id: "s6a" },
-        { cx: 1240, col: "#E28A2E", colB: "#FFD27A", p: 46.4, t0: 13.4, t1: 16.2, nombre: "Solo en casa", como: "como Eduardo", n: "500 personas", def: "al menos un estímulo en casa y <b>ninguno</b> en la escuela", tc: "#FFD27A", id: "s6b" },
+        { cx: 680, col: "#3C6FB4", colB: "#9CCBFF", p: 27.0, t0: 9.9, t1: 11.0, nombre: "Solo en la escuela", como: "como Héctor", n: "1,977 personas", def: "al menos un estímulo en la escuela y <b>ninguno</b> en casa", tc: "#9CCBFF", id: "s6a" },
+        { cx: 1240, col: "#E28A2E", colB: "#FFD27A", p: 46.4, t0: 12.0, t1: 13.2, nombre: "Solo en casa", como: "como Eduardo", n: "500 personas", def: "al menos un estímulo en casa y <b>ninguno</b> en la escuela", tc: "#FFD27A", id: "s6b" },
       ];
       const H = pl.hud;
       const vuelo = pl.capa(0, { sombra: false });
@@ -89,7 +89,7 @@
         // cómo se definió cada grupo
         const tarj = h("div", { style: { position: "absolute", left: cs.cx - 260 + "px", top: "96px", width: "520px", padding: "20px 26px 22px", background: "rgba(8,26,34,.88)", border: `3px solid ${cs.tc}`, borderRadius: "16px", textAlign: "center", color: "#EAF3F6" } }, H,
           `<div style="font:700 44px/1.1 var(--f-head);color:${cs.tc}">${cs.nombre}</div><div style="font:700 29px/1.3 var(--f-body);margin-top:10px">${cs.def}</div>`);
-        N.show(tl, tarj, 1.2 + ci * 3.4, { y: 16 });
+        N.show(tl, tarj, 1.2 + ci * 3.8, { y: 16 });
         N.hide(tl, tarj, 9.8, 0.4);
         const num = W.neon(H, "0.0%", { x: cs.cx - 220, y: 160, w: 440, size: 96, align: "center", color: "#FFFDF4", glow: cs.colB });
         num.style.transformOrigin = "50% 0";
@@ -253,12 +253,12 @@
       N.camara(tl, pl, { z: -40 }, { z: 50 }, 0, T, "sine.inOut");
 
       const H = pl.hud;
-      N.cameo(H, tl, { id: "D", quien: G.cameos[3], linea: "«Son asociaciones, no causalidad… Concluimos que…»", x: 110, y: 210, w: 800, h: 450, t0: 0.6, t1: T - 0.4, out: false });
+      N.cameo(H, tl, { id: "D", quien: G.cameos[3], linea: "«Son asociaciones, no causalidad… Concluimos que…»", x: 70, y: 200, w: 880, h: 495, t0: 0.6, t1: T - 0.4, out: false });
       const k1 = W.kicker(pl, "LIMITACIONES", "#2E4A66");
       const k2 = W.kicker(pl, "CONCLUSIONES", "#2E4A66");
       gsap.set(k2, { autoAlpha: 0 });
       N.show(tl, k1, 0.3, { y: 10 });
-      W.relevo(tl, k1, k2, 9.8);
+      W.relevo(tl, k1, k2, 8.4);
 
       const caja = h("div", { style: { position: "absolute", left: "1010px", top: "110px", width: "800px", height: "840px", perspective: "2400px" } }, H);
       const carta = h("div", { style: { position: "absolute", inset: 0, transformStyle: "preserve-3d", transform: "rotate(1.5deg)" } }, caja);
@@ -280,7 +280,7 @@
       const vidrio = h("div", { style: { position: "absolute", inset: 0, borderRadius: "50%", border: "16px solid #2E3A4A", background: "radial-gradient(circle at 35% 30%, rgba(255,255,255,.75), rgba(230,240,248,.55) 60%, rgba(200,220,235,.5))", boxShadow: "0 16px 30px rgba(30,50,80,.3)", overflow: "hidden" } }, lupa);
       const dentro = frases.map((t) => { const d = h("div", { style: { position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 30px", font: "700 40px/1.1 var(--f-head)", color: "#1F3550" } }, vidrio, t); gsap.set(d, { autoAlpha: 0 }); return d; });
       const stops = ys.map((y, i) => [1400 + (i % 2 ? 90 : -60), 110 + y + 30]);
-      const tStop = [1.5, 3.4, 5.4, 7.4];
+      const tStop = [1.3, 3.9, 5.4, 6.5];
       tl.fromTo(lupa, { x: 2100, y: 1000, autoAlpha: 0 }, { x: stops[0][0], y: stops[0][1], autoAlpha: 1, duration: 0.8, ease: "power2.out" }, 0.5);
       tStop.forEach((t, i) => {
         if (i) tl.to(lupa, { x: stops[i][0], y: stops[i][1], duration: 0.6, ease: "power2.inOut" }, t - 0.6);
@@ -289,14 +289,14 @@
         tl.to(marcas[i], { autoAlpha: 1, duration: 0.3 }, t + 0.9);
         tl.to(marcas[i], { backgroundSize: "100% 100%", duration: 0.45, ease: "power2.out" }, t + 1.0);
       });
-      tl.to(lupa, { x: 2200, y: 1100, autoAlpha: 0, duration: 0.7, ease: "power2.in" }, 8.8);
+      tl.to(lupa, { x: 2200, y: 1100, autoAlpha: 0, duration: 0.7, ease: "power2.in" }, 7.8);
 
       // las conclusiones, al reverso
       h("div", { style: { position: "absolute", left: "70px", top: "64px", font: "800 22px/1 var(--f-body)", letterSpacing: ".22em", color: "#5B7690" } }, re, "CONCLUSIONES");
       const conc = [
-        [`El acceso en la infancia se relaciona sobre todo con <span style="color:#C2452F;font-weight:700">volverse lector</span>, y poco con cuántos libros se leen.`, 10.6],
-        [`El índice del <span style="color:#C2452F;font-weight:700">hogar</span> se asocia más con leer que el de la escuela.`, 16.8],
-        [`Los dos índices <span style="color:#C2452F;font-weight:700">no son independientes</span>: el acceso escolar tiende a acompañar al del hogar.`, 21.4],
+        [`El acceso en la infancia se relaciona sobre todo con <span style="color:#C2452F;font-weight:700">volverse lector</span>, y poco con cuántos libros se leen.`, 9.0],
+        [`El índice del <span style="color:#C2452F;font-weight:700">hogar</span> se asocia más con leer que el de la escuela.`, 14.3],
+        [`Los dos índices <span style="color:#C2452F;font-weight:700">no son independientes</span>: el acceso escolar tiende a acompañar al del hogar.`, 18.3],
       ];
       const tops = [130, 380, 580];
       conc.forEach(([html, t], i) => {
@@ -304,7 +304,7 @@
           `<div style="flex:none;width:58px;height:58px;border-radius:50%;background:#2E4A66;color:#FFFDF6;display:flex;align-items:center;justify-content:center;font:700 32px var(--f-head);margin-top:4px">${i + 1}</div><div style="font:600 40px/1.24 var(--f-head);color:#1F3550">${html}</div>`);
         tl.fromTo(row, { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.6 }, t);
       });
-      tl.to(carta, { rotationY: 180, duration: 1.0, ease: "power2.inOut" }, 9.6);
+      tl.to(carta, { rotationY: 180, duration: 1.0, ease: "power2.inOut" }, 8.2);
     },
   });
 
@@ -430,7 +430,7 @@
       path(fr, "M-480,900 C300,880 900,900 1500,890 S2200,900 2400,895 V960 H-480 Z", "#C9A58A");
       path(fr, "M-480,928 C300,908 900,928 1500,918 S2200,928 2400,923", "none", { stroke: "#FFF8E8", "stroke-width": 5, "stroke-dasharray": "34 26" });
       rect(fr, -480, 960, 2880, 500, "#7E8C6C");
-      const fases = [["1", "Diagnóstico", 470, 10.0], ["2", "Focalización", 830, 12.6], ["3", "Bibliotecas de aula", 1190, 15.2], ["4", "Familias", 1550, 17.8]];
+      const fases = [["1", "Diagnóstico", 470, 10.3], ["2", "Focalización", 830, 12.0], ["3", "Bibliotecas de aula", 1190, 14.8], ["4", "Familias", 1550, 16.6]];
       fases.forEach(([n, txt, x, t]) => {
         const gg = g(fr, { opacity: 0 });
         rect(gg, x - 4, 760, 8, 150, "#6B4428");
@@ -445,7 +445,7 @@
       casas.forEach((c, i) => {
         const b = g(fr, { opacity: 0 });
         rect(b, -24, -32, 48, 64, cols[i], { rx: 4 }); rect(b, -24, -32, 10, 64, "rgba(0,0,0,.2)");
-        const t = 10.6 + i * 2.6;
+        const t = [10.4, 12.1, 14.9, 16.7][i];
         W.arco(tl, b, [330, 520], [c.cx - 38, 670], 260, t, 1.3, 540);
         tl.to(b, { opacity: 0, duration: 0.2 }, t + 1.3);
         tl.to(c.v, { attr: { fill: "#FFD27A" }, duration: 0.3 }, t + 1.3);
@@ -460,8 +460,8 @@
       const prop = N.t(H, "Propuesta", { x: 0, y: 84, w: 1920, size: 118, align: "center", color: "#3A2416", sombra: false, weight: 700 });
       prop.style.textShadow = "0 4px 0 rgba(255,241,201,.6)";
       N.write(tl, prop, 1.0, 1.0);
-      N.hide(tl, prop, 21.4, 0.4);
-      const ods = [["4", "Educación<br>de calidad", "#C5192D", 520, 360, 22.0], ["10", "Reducción de las<br>desigualdades", "#DD1367", 920, 480, 23.0]];
+      N.hide(tl, prop, 18.6, 0.4);
+      const ods = [["4", "Educación<br>de calidad", "#C5192D", 520, 360, 19.6], ["10", "Reducción de las<br>desigualdades", "#DD1367", 920, 480, 20.6]];
       ods.forEach(([n, t, col, x, w, at]) => {
         const d = h("div", { style: { position: "absolute", left: x + "px", top: "120px", width: w + "px", height: "170px", background: col, borderRadius: "14px", boxShadow: "0 14px 28px rgba(80,30,40,.3)", color: "#fff", padding: "14px 24px", display: "flex", alignItems: "center", gap: "20px" } }, H,
           `<div style="font:700 104px/1 var(--f-head)">${n}</div><div style="font:800 25px/1.15 var(--f-body);text-transform:uppercase;letter-spacing:.03em"><span style="font-size:17px;opacity:.85;letter-spacing:.14em">ODS</span><br>${t}</div>`);

@@ -1,0 +1,194 @@
+% Póster científico · Expo Ingenierías (versión 2, basada en el boceto del equipo)
+% Misma estructura del boceto: encabezado azul, columna angosta (Introducción, Objetivo, Metodología)
+% y columna ancha (Resultados, Conclusión, Agradecimientos, QR). Compilar: lualatex poster2.tex (dos veces)
+% Gráficas: Rscript figuras_poster.R 2   (salen en figs2/)
+\documentclass{article}
+\usepackage[paperwidth=90cm,paperheight=120cm,margin=0cm]{geometry}
+\usepackage{fontspec}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage{xcolor,graphicx,tikz,enumitem,tabularray,qrcode}
+\usepackage[most]{tcolorbox}
+\usetikzlibrary{positioning,calc,shadows,arrows.meta}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+\setmainfont{SourceSans3}[Extension=.otf, UprightFont=*-Regular, BoldFont=*-Bold, ItalicFont=*-RegularIt, BoldItalicFont=*-BoldIt, FontFace={sb}{n}{*-Semibold}, FontFace={k}{n}{*-Black}]
+\newcommand\sbf{\fontseries{sb}\selectfont}
+
+% ---------- colores: azul del boceto (#154E99) y los de las gráficas
+\definecolor{tec}{HTML}{154E99}
+\definecolor{tecosc}{HTML}{0E3A75}
+\definecolor{tecclaro}{HTML}{EEF3FA}
+\definecolor{tinta}{HTML}{1B2A41}
+\definecolor{gris}{HTML}{5F6B7A}
+\definecolor{linea}{HTML}{D5DEEA}
+\definecolor{hogar}{HTML}{E8912D}
+\definecolor{escuela}{HTML}{4FA3D9}
+\color{tinta}
+
+\newcommand\cuerpo{\fontsize{26}{34}\selectfont}
+\newcommand\chico{\fontsize{22}{28}\selectfont}
+\newcommand\mini{\fontsize{17.5}{22}\selectfont}
+\newcommand\urlvideo{https://github.com/Mmateo101/modelacion-estadistica}% cambiar por el link del video cuando esté publicado
+\newcommand\urlrefs{https://docs.google.com/document/d/1m6BU_027N6RWY13CRoEBeiT9fDqb2c-IptHO9M2ZPhQ/edit?usp=sharing}% el mismo documento del boceto
+
+% pestaña azul de cada sección (como en el boceto)
+\newcommand\seccion[1]{%
+  \par\vspace{1.0cm}%
+  \begin{tikzpicture}
+    \node[fill=tec, text=white, anchor=west, minimum height=2.5cm, text width=\linewidth-2.2cm, inner xsep=1.1cm, align=left,
+          font=\sbf\fontsize{50}{56}\selectfont] (s) {#1};
+    \fill[tecosc] (s.north west) rectangle ([xshift=0.45cm]s.south west);
+  \end{tikzpicture}\par\vspace{0.7cm}}
+\newcommand\figura[3]{% archivo, número, pie
+  \includegraphics[width=\linewidth]{figs2/#1}\par\vspace{0.2cm}
+  {\mini\color{gris}{\sbf\color{tec} Figura #2.} #3}\par}
+\newtcolorbox{prueba}{enhanced, colback=tecclaro, colframe=tecclaro, boxrule=0pt, arc=8pt,
+  borderline west={9pt}{0pt}{tec}, left=26pt, right=22pt, top=16pt, bottom=16pt, before skip=0.6cm, after skip=0pt, fontupper=\chico}
+\setlist[itemize]{leftmargin=1.2cm, label={\color{tec}\raisebox{0.1em}{\scalebox{1.3}{$\bullet$}}}, itemsep=0.25cm, topsep=0.3cm, parsep=0pt}
+\newcommand\hz{H\textsubscript{0}}
+\newcommand\fila[2]{% dos celdas de una fila de resultados
+  \begin{minipage}[t]{25.6cm}\vspace{0pt}#1\end{minipage}\hfill
+  \begin{minipage}[t]{25.6cm}\vspace{0pt}#2\end{minipage}\par\vspace{1.1cm}}
+
+\begin{document}
+\cuerpo
+% =================================================================== ENCABEZADO
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[tec] (current page.north west) rectangle ([yshift=-17.2cm]current page.north east);
+  \fill[tecosc] ([yshift=-17.2cm]current page.north west) rectangle ([yshift=-17.8cm]current page.north east);
+  \node[anchor=west] at ([xshift=3cm, yshift=-8.6cm]current page.north west) {\includegraphics[width=19cm]{img/tec_logo_blanco.png}};
+  \node[anchor=north west, text width=62cm, align=left, text=white, font=\bfseries\fontsize{74}{84}\selectfont] (titulo) at ([xshift=25cm, yshift=-1.9cm]current page.north west)
+    {Análisis estadístico de la desigualdad en el acceso a la lectura en la infancia y su impacto en los hábitos de lectura en la vida adulta};
+  \node[anchor=north west, below=0.9cm of titulo.south west, anchor=north west, text width=62cm, align=left, text=white, font=\sbf\fontsize{33}{42}\selectfont] (aut)
+    {César Julián Leal-Salazar\textsuperscript{1}, Eliel Silva-Morales\textsuperscript{1}, Fernando Isaac Martínez-García\textsuperscript{1}, Mateo Rodolfo Flores-Torres\textsuperscript{1}};
+  \node[anchor=north west, below=0.35cm of aut.south west, anchor=north west, text width=62cm, align=left, text=white!85!tec, font=\fontsize{24}{31}\selectfont]
+    {\textsuperscript{1}Tecnológico de Monterrey, Escuela de Ingeniería y Ciencias, Av. Eugenio Garza Sada 2501 Sur, Monterrey, N.L., México, 64700.};
+\end{tikzpicture}
+\vspace*{17.4cm}
+
+\hspace*{3cm}%
+% =================================================================== COLUMNA ANGOSTA
+\begin{minipage}[t]{27.5cm}
+\seccion{Introducción}
+En la muestra del MOLEC 2019–2024 del INEGI, solo \textbf{41.7\,\%} de los adultos alfabetos leyó al menos un libro en los últimos doce meses, y el porcentaje de la población alfabeta que lee algún material bajó de 84.2\,\% en 2015 a 69.6\,\% en 2024 (INEGI, 2024).\par\vspace{0.5cm}
+Evans et al. (2010) encontraron, en 27 países, que crecer en un hogar con muchos libros se asocia con 3 años más de escolaridad, una ventaja comparable a nacer en una familia con buena situación económica. Según Bourdieu (1986), los libros son \textbf{capital cultural} que contribuye a reproducir las desigualdades. Visibilizar y cuantificar estas brechas permite mostrar que el hábito lector no depende solo de la motivación personal, sino también del acceso en la infancia.
+
+\seccion{Objetivo}
+Analizar cómo la desigualdad en el acceso a la lectura en el hogar y en la escuela durante la infancia se relaciona con:
+\begin{itemize}
+  \item[\color{tec}\sbf a)] la decisión de leer o no leer libros, y
+  \item[\color{tec}\sbf b)] el número de libros leídos por los adultos alfabetos de México.
+\end{itemize}
+
+\seccion{Metodología}
+Se integraron seis levantamientos del MOLEC (2019–2024) con \textbf{11,685 adultos alfabetos} de 32 áreas urbanas. Con ocho preguntas sobre los estímulos de lectura en la infancia se construyeron dos índices de acceso, uno del \textcolor{hogar}{\sbf hogar} y otro de la \textcolor{escuela}{\sbf escuela}, de 0 a 4 estímulos.
+\par\vspace{0.8cm}
+\begin{center}
+\begin{tikzpicture}[font=\chico, every node/.style={align=center},
+    caja/.style={draw=linea, line width=3pt, fill=white, rounded corners=10pt, inner sep=14pt},
+    flecha/.style={-{Stealth[length=0.7cm,width=0.6cm]}, line width=4pt, color=tec!45}]
+  \node[caja, text width=8.4cm] (b) {\sbf MOLEC 2019–2024\\ 11,966 personas};
+  \node[caja, right=5.2cm of b, text width=8.0cm, fill=tec, draw=tec, text=white] (m) {\sbf 11,685\\ adultos alfabetos};
+  \draw[flecha] (b) -- node[above, font=\mini, text=gris] {−281 que} node[below, font=\mini, text=gris] {no leen} (m);
+  \node[caja, anchor=north west, at={($(b.south west)+(0,-1.4)$)}, text width=10.6cm, draw=hogar, align=left] (h)
+    {{\sbf\color{hogar} Hogar} (p34a–d)\\[3pt]\mini Bibliotecas o librerías · veía leer a sus padres · le leían · libros en casa};
+  \node[caja, anchor=north east, at={($(m.south east)+(0,-1.4)$)}, text width=10.6cm, draw=escuela, align=left] (e)
+    {{\sbf\color{escuela} Escuela} (p36a–d)\\[3pt]\mini Le pedían leer otros libros · comentar lo leído · la motivaban a leer · ir a bibliotecas};
+  \draw[flecha] (m.south) -- ++(0,-0.6) -| (h.north);
+  \draw[flecha] (m.south) -- ++(0,-0.6) -| (e.north);
+\end{tikzpicture}
+\end{center}
+\par\vspace{0.7cm}
+{\mini
+\begin{tblr}{colspec={X[0.85,l] X[1.6,l]}, width=\linewidth, row{1}={font=\sbf, bg=tec, fg=white}, row{even[2]}={bg=tecclaro}, rowsep=6pt, colsep=12pt, hline{Z}={1.5pt,tec}}
+Variable & Unidad o categoría \\
+Lectura de libros & 1 = Sí; 0 = No \\
+Libros leídos & Libros (1 a 99) \\
+Índice del hogar & Estímulos (0 a 4): bajo 0–1, medio 2, alto 3–4 \\
+Índice de la escuela & Estímulos (0 a 4): bajo 0–1, medio 2, alto 3–4 \\
+Libros en casa & Ninguno, 1–25, 26–50, 51–75, 76–100, más de 100 \\
+Escolaridad & Primaria o menos, secundaria, media superior, superior \\
+Edad & Años (18 a 97) \\
+Año & 2019 a 2024 \\
+\end{tblr}}
+\par\vspace{0.3cm}
+{\mini\color{gris} Nota: los libros leídos se miden solo en las personas lectoras (n = 4,868), y los datos faltantes no superan el 7.3\,\%.}
+\par\vspace{0.7cm}
+Con una significancia de \textbf{α = 0.04} se calcularon intervalos de confianza al 96\,\% y se aplicaron pruebas z de diferencia de proporciones, una prueba ji-cuadrada de independencia entre los índices y una prueba t con la aproximación de Welch, con su intervalo para la diferencia de medias. Todo el análisis se hizo en R.
+\par\vspace{0.6cm}
+{\chico
+\begin{tblr}{colspec={X[0.9,l] X[1.5,l]}, width=\linewidth, row{1}={font=\sbf, fg=tec}, rowsep=5pt, colsep=8pt, hline{1,Z}={1.5pt,tec}, hline{2}={0.8pt,tec}, hline{3-Y}={0.5pt,linea}}
+Técnica & Supuesto verificado \\
+z de proporciones & n·p ≥ 5 y n·(1 − p) ≥ 5 (mínimo 232) \\
+Ji-cuadrada & Frecuencias esperadas ≥ 5 (mínima 184.8) \\
+t de Welch & Libros no normales; TLC con más de 1,400 lectores por grupo; varianzas distintas \\
+\end{tblr}}
+% ---- agradecimientos y códigos QR
+\seccion{Agradecimientos}
+Agradecemos a la Dra. Blanca Rosa Ruiz Hernández y a la Dra. María Guadalupe Tobías Lara por asesorarnos en este proyecto, desarrollado en el curso MA1001B Modelación estadística para la toma de decisiones.
+\par\vspace{1.0cm}
+\begin{minipage}[t]{13cm}\centering
+{\sbf\fontsize{30}{36}\selectfont\color{tec} Video y código}\par\vspace{0.4cm}
+\qrcode[height=9.5cm]{\urlvideo}
+\end{minipage}\hfill
+\begin{minipage}[t]{13cm}\centering
+{\sbf\fontsize{30}{36}\selectfont\color{tec} Referencias}\par\vspace{0.4cm}
+\qrcode[height=9.5cm]{\urlrefs}
+\end{minipage}
+
+\end{minipage}%
+\hspace{2.5cm}%
+% =================================================================== COLUMNA ANCHA
+\begin{minipage}[t]{54cm}
+\seccion{Resultados}
+\fila{%
+  El acceso lector en el hogar y en la escuela \textbf{no son independientes} (n = 10,384). De quienes no recibieron ningún estímulo en casa, 33.4\,\% tampoco lo recibió en la escuela, frente a solo 2.2\,\% de quienes recibieron los cuatro en el hogar: el acceso escolar tiende a acompañar al acceso que ya existía en casa.
+  \begin{prueba}
+  {\sbf Ji-cuadrada de independencia.} \hz: los índices son independientes.\\
+  χ² = 2414.77 > 27.14 (16 gl); p < 2.2 × 10\textsuperscript{−16}. {\sbf Se rechaza \hz.}
+  \end{prueba}}{%
+  \figura{f8_apiladas.pdf}{1}{Estímulos en la escuela según los estímulos en el hogar (porcentaje por renglón).}}
+\fila{%
+  \figura{f2_ic_niveles.pdf}{2}{Proporción de lectores e intervalos de confianza al 96\,\% por nivel de acceso.}}{%
+  Quienes tuvieron acceso alto en casa leen aproximadamente el doble que quienes tuvieron acceso bajo: con 96\,\% de confianza, entre \textbf{58.1\,\% y 61.3\,\%} contra \textbf{26.8\,\% y 29.3\,\%}. Los intervalos no se traslapan.
+  \begin{prueba}
+  {\sbf Prueba z, alto vs bajo (hogar).} \hz: p\textsubscript{alto} − p\textsubscript{bajo} = 0.\\
+  z = 30.50, fuera de ±2.054; p < 0.001. {\sbf Se rechaza \hz.} Lo mismo ocurre en las 6 comparaciones entre niveles (z de 3.37 a 30.50).
+  \end{prueba}}
+\fila{%
+  Con estímulos en un solo entorno, la proporción de lectores es mayor con estímulos solo en el hogar (\textbf{46.4\,\%}) que solo en la escuela (\textbf{27.0\,\%}). Cuando el acceso en casa es bajo, el acceso escolar alto se asocia con entre 5.1 y 10.5 puntos más de lectores.
+  \begin{prueba}
+  {\sbf Prueba z.} \hz: p\textsubscript{casa} = p\textsubscript{escuela}. z = 8.41, fuera de ±2.054; p = 4.3 × 10\textsuperscript{−17}. {\sbf Se rechaza \hz.} IC 96\,\% de la diferencia: \textbf{14.4 a 24.5 puntos}.
+  \end{prueba}}{%
+  \figura{f5_solo.pdf}{3}{Proporción de lectores e IC al 96\,\% con estímulos solo en el hogar o solo en la escuela.}}
+\fila{%
+  \figura{f3_escolaridad.pdf}{4}{Porcentaje de lectores por escolaridad y nivel de acceso en el hogar.}}{%
+  Dentro de cada nivel educativo, el acceso alto en casa se asocia con \textbf{19 a 24 puntos más} de lectores. Incluso los adultos con primaria o menos y acceso alto (40.9\,\%) leen más que los de media superior con acceso bajo (28.8\,\%).
+  \begin{prueba}
+  {\sbf Prueba z, escolaridad.} Entre primaria o menos y secundaria no se rechaza \hz{} (z = 1.47 < 2.054): no hay evidencia de que la proporción de lectores difiera; sí se rechaza entre los demás niveles consecutivos.
+  \end{prueba}}
+\fila{%
+  En cuántos libros se leen, la diferencia por acceso es pequeña: entre los 4,868 lectores, la mediana pasa de 2 a 3 libros y la media de 3.07 a 3.85.
+  \begin{prueba}
+  {\sbf t de Welch.} \hz: μ\textsubscript{alto} = μ\textsubscript{bajo}. t = 4.56 > 1.751 (3,311 gl); p = 2.6 × 10\textsuperscript{−6}. {\sbf Se rechaza \hz}, pero el IC 96\,\% de la diferencia es de \textbf{0.43 a 1.13 libros al año}.
+  \end{prueba}}{%
+  \figura{f6_libros.pdf}{5}{Distribución del número de libros leídos por los lectores según el acceso en el hogar.}}
+\vspace{-1.1cm}
+\seccion{Conclusión}
+El acceso a la lectura en la infancia se asocia sobre todo con \textbf{volverse lector} (59.7\,\% contra 28.1\,\% según el acceso en casa), brecha que se mantiene en todos los niveles de escolaridad, y poco con cuántos libros se leen al año (diferencia menor a un libro). Además, el \textbf{hogar} se asocia más que la escuela con leer (46.4\,\% contra 27.0\,\% con estímulos en un solo entorno), y el acceso escolar tiende a acompañar al del hogar en lugar de repartirse de forma pareja. Al tratarse de un estudio observacional sobre una muestra urbana sin factor de expansión, los resultados reflejan asociaciones y no causalidad.
+\par\vspace{0.6cm}
+\begin{tcolorbox}[enhanced, colback=tec, colframe=tec, arc=10pt, left=30pt, right=30pt, top=22pt, bottom=22pt, fontupper=\color{white}\cuerpo]
+{\sbf Propuesta.} Priorizar intervenciones tempranas en niñas y niños con bajo acceso en casa (0–1 estímulos) mediante talleres de lectura familiar y préstamo de libros escolares hacia el hogar.\par\vspace{0.3cm}
+{\itshape\fontsize{30}{38}\selectfont La desigualdad en el acceso empieza en casa, y ahí también puede empezar la solución.}
+\end{tcolorbox}
+\end{minipage}
+
+% =================================================================== PIE
+\begin{tikzpicture}[remember picture, overlay]
+  \fill[tec] ([yshift=2.2cm]current page.south west) rectangle (current page.south east);
+  \node[anchor=west, text=white, font=\chico] at ([xshift=3cm, yshift=1.1cm]current page.south west) {Expo Ingenierías · 28.ª edición · Investigación y desarrollo de propuestas de mejora};
+  \node[anchor=east, text=white, font=\chico] at ([xshift=-3cm, yshift=1.1cm]current page.south east) {Fuente: INEGI, Módulo sobre Lectura (MOLEC) 2019–2024};
+\end{tikzpicture}
+\end{document}

@@ -32,6 +32,7 @@ Lee las frases tal cual, despacio, y grábalas en orden. Celular horizontal, luz
 - Somos Fernando, Mateo, Eliel y César, estudiantes de profesional del Tec de Monterrey…
 - …y hoy les vamos a presentar nuestra investigación: «Desigualdad en el acceso a la lectura».
 - En la clase de Modelación estadística, con las doctoras Blanca Ruiz y María Guadalupe Tobías.
+- **(NUEVA, falta grabar · ~12 s)** Para hacerla, usamos el MOLEC, el Módulo sobre Lectura del INEGI. Cada febrero, pregunta a personas de 18 años o más que saben leer qué leen hoy… y qué estímulos de lectura tuvieron en su infancia.
 - Importa porque el hábito lector se forma en la infancia, y el acceso no es igual para todos. Eso nos llevó a preguntarnos:
 - ¿cómo se relaciona el acceso a la lectura en la infancia con leer o no leer libros de adulto, y con cuántos?
 - El alcance: seis levantamientos del MOLEC, de 2019 a 2024: 11,685 adultos de 32 áreas urbanas.

@@ -1,10 +1,11 @@
 # Animación del video
 
-El video se arma como una página web que corre sola y se exporta a MP4 cuadro por cuadro.
+El video se arma como una página web que corre sola y se exporta a MP4 cuadro por cuadro. Hay dos versiones en esta carpeta:
 
 | Página | Qué es |
 |---|---|
 | `nuevo.html` | **Versión 4 (la vigente):** teatro de papel con luz. 12 escenas, 4:52 |
+| `video.html` | Versión 2 (descartada): reutilizaba el arte de la presentación. Se queda solo como referencia hasta que la versión 3 esté completa |
 
 ## Verla
 

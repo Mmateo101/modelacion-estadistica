@@ -10,7 +10,10 @@ Proyecto de MA1001B · Modelación estadística para la toma de decisiones (Tecn
 | | Dónde |
 |---|---|
 | Presentación interactiva | [modelacion-estadistica-presentacion.vercel.app](https://modelacion-estadistica-presentacion.vercel.app) · carpeta raíz (`index.html`) |
-| Video del concurso (4:52) | [`video/Video_final.mp4`](video/Video_final.mp4) · la versión en alta calidad está en [Releases](../../releases) |
+| Video del concurso (4:27) | [`video/Video_final.mp4`](video/Video_final.mp4) (comprimido) · la versión en alta calidad (262 MB) está en [Releases](../../releases/latest) |
+| Póster científico (90 × 120 cm) | [`poster/Poster_1_propio.pdf`](poster/Poster_1_propio.pdf) · [`poster/Poster_2_boceto.pdf`](poster/Poster_2_boceto.pdf) · fuente en LaTeX y gráficas en R en [`poster/latex/`](poster/latex) |
+| Reporte técnico para Expo Ingenierías | [`manuscrito/Reporte_Lectura_Expo.pdf`](manuscrito/Reporte_Lectura_Expo.pdf) · [Word](manuscrito/Reporte_Expo_Ingenierias.docx) |
+| Imágenes del perfil (carrusel) | [`carrusel/`](carrusel) |
 | Manuscrito final | [`manuscrito/Reporte_final.docx`](manuscrito/Reporte_final.docx) (10 páginas) · [versión extendida](manuscrito/Reporte_final_version_extendida.docx) · [abstract](manuscrito/Abstract.docx) |
 | Código en R | [`codigo/`](codigo) |
 | Bases de datos | [`datos/`](datos) |
@@ -32,7 +35,10 @@ video/
   Video_final.mp4                       video del concurso (comprimido para GitHub)
   animacion/                            código de la animación (HTML + GSAP + D3) y herramientas de exportación
   guiones/                              guion del video y guion de grabación por persona
-manuscrito/                             reporte final, versión extendida y abstract (Word)
+poster/                                 los dos pósters en PDF
+  latex/                                fuente LaTeX (lualatex), gráficas en R (figuras_poster.R) y carrusel
+carrusel/                               tres imágenes del perfil del proyecto (GIF + dos PNG)
+manuscrito/                             reporte final, versión extendida, abstract y reporte técnico para Expo Ingenierías (PDF)
 codigo/
   01_limpieza_y_union.qmd               limpieza: une los seis levantamientos y filtra la muestra analítica
   02_preparacion_variables.Rmd          construye los índices de acceso y las variables de análisis
@@ -90,6 +96,6 @@ Nota de datos: las barras de error de la gráfica «solo escuela frente a solo h
 
 ## Video
 
-`video/animacion/` contiene la animación completa del video: una página web que corre sola y se exporta a MP4 cuadro por cuadro con Chrome sin interfaz y ffmpeg. Las instrucciones están en [`video/animacion/LEEME.md`](video/animacion/LEEME.md). Los marcos de los cameos y la voz guía se sustituyen por las tomas reales del equipo en la edición final; el guion de grabación (qué dice cada quien) está en `video/guiones/Que_graba_cada_quien.docx`.
+`video/animacion/` contiene la animación completa del video: una página web que corre sola y se exporta a MP4 cuadro por cuadro con Chrome sin interfaz y ffmpeg. Las instrucciones están en [`video/animacion/LEEME.md`](video/animacion/LEEME.md). La versión final ya tiene las grabaciones reales de los cuatro integrantes (voz y cameos): `tools/preparar_medios.mjs` las procesa, `tools/mezcla.mjs` empareja el volumen (EBU R128) y `tools/render.mjs` exporta el video. Las grabaciones originales no se suben al repositorio; el guion de grabación (qué dice cada quien) está en `video/guiones/`.
 
 Se usó IA (Claude, de Anthropic) como apoyo en el código, la redacción y la animación. El equipo verificó todos los resultados.
